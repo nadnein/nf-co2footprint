@@ -2,7 +2,6 @@ package nextflow.co2footprint.Config
 
 import groovy.util.logging.Slf4j
 import nextflow.co2footprint.CO2FootprintConfig
-import nextflow.config.spec.ConfigScope
 import nextflow.script.dsl.Description
 import java.nio.file.Path
 
@@ -14,7 +13,7 @@ import java.nio.file.Path
  * @author Murray Wham <murray.wham@ed.ac.uk>
  */
 @Slf4j
-class BaseFileConfig implements ConfigScope {
+class BaseFileConfig {
     final String name
     final String ending
 
