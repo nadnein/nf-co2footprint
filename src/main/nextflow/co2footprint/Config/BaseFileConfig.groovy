@@ -2,7 +2,7 @@ package nextflow.co2footprint.Config
 
 import groovy.util.logging.Slf4j
 import nextflow.co2footprint.CO2FootprintConfig
-import nextflow.config.spec.ConfigOption
+import nextflow.config.spec.ConfigScope
 import nextflow.script.dsl.Description
 import java.nio.file.Path
 
@@ -14,24 +14,21 @@ import java.nio.file.Path
  * @author Murray Wham <murray.wham@ed.ac.uk>
  */
 @Slf4j
-class BaseFileConfig {
+class BaseFileConfig implements ConfigScope {
     final String name
     final String ending
 
-    @ConfigOption
     @Description('Path to the file.')
     final Path file
 
-    @ConfigOption
     @Description('Whether to enable the file creation.')
     final Boolean enabled
 
-    @ConfigOption
     @Description('Whether to overwrite a file if it already exists.')
     final Boolean overwrite
 
     protected final LinkedHashSet<String> usedKeys = [] as LinkedHashSet<String>
-
+    
     /**
      * Parses a file-based sub-configuration for nf-co2footprint and sets up defaults and fallbacks.
      *

@@ -6,11 +6,9 @@ import nextflow.config.spec.ConfigScope
 import nextflow.config.spec.ScopeName
 import nextflow.script.dsl.Description
 
-@ScopeName('co2footprint.provenance')
 @Description('The `co2footprint.provenance` scope allows you to configure the data/machine-actionable file of the `nf-co2footprint` plugin.')
 class ProvenanceFileConfig extends BaseFileConfig implements ConfigScope {
 
-    @ConfigOption
     @Description('Whether only emission metrics should be reported in the provenance file.')
     final boolean emissionMetricsOnly
 
