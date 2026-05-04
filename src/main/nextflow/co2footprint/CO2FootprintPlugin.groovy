@@ -71,19 +71,21 @@ class CO2FootprintPlugin extends BasePlugin implements PluginAbstractExec {
         sessionTraceRecorder.stop()
         TraceRecord sessionRecord = sessionTraceRecorder.report()
 
-        CO2Record sessionCO2Record = observer.createCO2Record(sessionRecord)
-        observer.timeCiRecordCollector.stop()
+        if (observer != null) {
+            CO2Record sessionCO2Record = observer.createCO2Record(sessionRecord)
+            observer.timeCiRecordCollector.stop()
 
-        CO2RecordTree sessionStats = new CO2RecordTree(
-                observer.session?.runName,
-                [level: 'session'],
-                sessionCO2Record,
-                null,
-                [observer.workflowStats]
-        )
+            CO2RecordTree sessionStats = new CO2RecordTree(
+                    sessionCO2Record.store.get('name', null),
+                    [level: 'session'],
+                    sessionCO2Record,
+                    null,
+                    [observer.workflowStats]
+            )
 
-        // Render files
-        observer.renderFiles(sessionStats)
+            // Render files
+            observer.renderFiles(sessionStats)
+        }
 
         super.stop()
     }
@@ -102,7 +104,7 @@ class CO2FootprintPlugin extends BasePlugin implements PluginAbstractExec {
      * @param manifest URL to the manifest
      * @param tryFallback Whether a fallback in the form of a search of all MANIFESTS from the class loader should be attempted
      */
-    protected static String readPluginVersion(
+    static String readPluginVersion(
             URL manifest=CO2FootprintPlugin.class.getResource('/META-INF/MANIFEST.MF'),
             boolean tryFallback=true
     ) {

@@ -1,7 +1,7 @@
 package nextflow.co2footprint
 
 import groovy.util.logging.Slf4j
-import nextflow.co2footprint.Config.DataFileConfig
+import nextflow.co2footprint.Config.ProvenanceFileConfig
 import nextflow.co2footprint.Config.ReportFileConfig
 import nextflow.co2footprint.Config.SummaryFileConfig
 import nextflow.co2footprint.Config.TraceFileConfig
@@ -70,8 +70,8 @@ class CO2FootprintConfig implements ConfigScope {
     final ReportFileConfig report
 
     @ConfigOption
-    @Description('Configuration for the data/machine-readable file.')
-    final DataFileConfig dataFile
+    @Description('Configuration for the provenance data/machine-readable file.')
+    final ProvenanceFileConfig provenance
 
     @ConfigOption
     @Description('Location GeoCode from Electricity maps.')
@@ -114,8 +114,8 @@ class CO2FootprintConfig implements ConfigScope {
     String machineType
 
     @ConfigOption
-    @Description('Polynomial coefficients for CPU power model (highest degree first).')
-    final List<Number> cpuPowerModel
+    @Description('A power model function that takes the parameter `coreUsage`.')
+    final Closure<Number> cpuPowerModel
 
     /**
      * No-arg constructor required by Nextflow's v2 config parser to
@@ -142,7 +142,7 @@ class CO2FootprintConfig implements ConfigScope {
         trace = new TraceFileConfig(getCollect('trace', configMap, usedKeys) as Map ?: [:], timestamp)
         summary = new SummaryFileConfig(getCollect('summary', configMap, usedKeys) as Map ?: [:], timestamp)
         report = new ReportFileConfig(getCollect('report', configMap, usedKeys) as Map ?: [:], timestamp)
-        dataFile = new DataFileConfig(getCollect('dataFile', configMap, usedKeys) as Map ?: [:], timestamp)
+        provenance = new ProvenanceFileConfig(getCollect('provenance', configMap, usedKeys) as Map ?: [:], timestamp)
 
         // Location
         location = getCollect('location', configMap, usedKeys) as String ?: getLocationFromAWSRegion()
@@ -155,12 +155,9 @@ class CO2FootprintConfig implements ConfigScope {
         ciMarket = getCollect('ciMarket', configMap, usedKeys) as BigDecimal
 
         // Power model
-        cpuPowerModel = getCollect('cpuPowerModel', configMap, usedKeys) as List<BigDecimal>
+        cpuPowerModel = getCollect('cpuPowerModel', configMap, usedKeys) as Closure<BigDecimal>
         if (cpuPowerModel != null) {
-            Integer degree = cpuPowerModel.size() - 1
-            List<String> terms = []
-            cpuPowerModel.eachWithIndex { Number c, Integer i -> terms.add("${c}*x^${degree - i}") }
-            log.info("Using custom CPU power model: f(x) = " + terms.join(" + "))
+            log.info("Using custom CPU power model.")
         }
 
         // Powerdraw factors
@@ -323,7 +320,7 @@ class CO2FootprintConfig implements ConfigScope {
             reportFile: report.file,
             summaryFile: summary.file,
             traceFile: trace.file,
-            dataFile: dataFile.file
+            provenanceFile: provenance.file
         ].sort() as SortedMap
     }
 
