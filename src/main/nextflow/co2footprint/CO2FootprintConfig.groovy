@@ -57,20 +57,15 @@ class CO2FootprintConfig implements ConfigScope {
     private final String timestamp = TraceHelper.launchTimestampFmt()
     private final String executor
 
-    // Note: (types=[Map]) is only necessary to remove warnings for nested scopes. This solution is not ideal.
-    @ConfigOption(types=[Map])
     @Description('Configuration for the trace file.')
     final TraceFileConfig trace
 
-    @ConfigOption(types=[Map])
     @Description('Configuration for the summary file.')
     final SummaryFileConfig summary
 
-    @ConfigOption(types=[Map])
     @Description('Configuration for the report file.')
     final ReportFileConfig report
 
-    @ConfigOption(types=[Map])
     @Description('Configuration for the provenance data/machine-readable file.')
     final ProvenanceFileConfig provenance
 
