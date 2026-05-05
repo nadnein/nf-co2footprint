@@ -1,8 +1,32 @@
 # New
 ## Bug Fixes:
+- CPU power model now applied correctly
+- Unintended report value removal
+
+## Misc:
+- Improved workflow reporting form extension/CLI by deriving and injecting workflow metadata from the provided trace file
+- Added full integration test
+
+## Features:
+- Transformation of data file to provenance file with schema.org / bioschemas.org type annotation in JSON-LD data format
+
+# 1.2.1
+## Bug Fixes:
+- Total values from workflow in report
+- Missing newlines in non-ANSI logging
+
+## Misc:
+- Aligned Session tracking with Nextflow's trace tracking
+
+## Features:
+- New CI reporting of failed file comparisons
+
+# 1.2.0
+## Bug Fixes:
 - Plot display of titles and axes names in report
 - Accumulation of dates
-- Total values from workflow in report
+- Never initialized observer called for session emissions on CLI command
+- Included descendant processes into session tracking
 
 ## Misc:
 - Improved the testing of log messages
@@ -23,7 +47,6 @@
 - Usage of TDP per logical core, becaus this corresponds best to the `cpus` trace metric
 - Tracking of whole session emissions
 - Precursor of machine-actionable file
-- New CI reporting of failed file comparisons
 
 # Version 1.1.0
 ## Bug Fixes:
