@@ -14,6 +14,7 @@ import nextflow.util.LoggerHelper
 class CustomCaptureAppender extends AppenderBase<ILoggingEvent> {
     final Session session
     final PatternLayout layout
+    LogObserver renderer
 
     CustomCaptureAppender(Session session, PatternLayout layout) {
         super()
@@ -28,6 +29,8 @@ class CustomCaptureAppender extends AppenderBase<ILoggingEvent> {
     void start() {
         super.start()
         layout.start()
+        
+        renderer = session?.logObserver
     }
 
     /**
@@ -40,9 +43,8 @@ class CustomCaptureAppender extends AppenderBase<ILoggingEvent> {
         try {
             // Format message with Layout
             final String message = layout.doLayout(event)
-
+            
             // Render the results
-            final LogObserver renderer = session?.logObserver
             if( !renderer || !renderer.started || renderer.stopped ) {
                 System.out.println(message)
             }
