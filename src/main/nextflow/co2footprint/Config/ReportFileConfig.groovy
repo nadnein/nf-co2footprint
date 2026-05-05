@@ -12,27 +12,27 @@ class ReportFileConfig extends BaseFileConfig implements ConfigScope {
 
     @ConfigOption
     @Description('Path to the file.')
-    Path file
+    final Path file
 
     @ConfigOption
     @Description('Whether to enable the file creation.')
-    Boolean enabled
+    final Boolean enabled
 
     @ConfigOption
     @Description('Whether to overwrite a file if it already exists.')
-    Boolean overwrite
+    final Boolean overwrite
 
     @ConfigOption
     @Description('The number of maximum tasks that is displayed in the report.')
-    Integer maxTasks
+    final Integer maxTasks
 
     ReportFileConfig(Map reportFileConfig, String timestamp=null) {
         super('report', 'html')
 
         file = defineFile(reportFileConfig, timestamp)
-        enabled =  defineEnabled(reportFileConfig)
+        enabled = defineEnabled(reportFileConfig)
         overwrite = defineOverwrite(reportFileConfig)
-        
+
         maxTasks = reportFileConfig.containsKey('maxTasks') ?
                 CO2FootprintConfig.getCollect('maxTasks', reportFileConfig, usedKeys) as Integer :
                 10_000

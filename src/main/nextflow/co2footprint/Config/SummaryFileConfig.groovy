@@ -8,27 +8,27 @@ import nextflow.script.dsl.Description
 import java.nio.file.Path
 
 @Description('The `co2footprint.summary` scope allows you to configure the summary file of the `nf-co2footprint` plugin.')
-class SummaryFileConfig extends BaseFileConfig implements ConfigScope{
+class SummaryFileConfig extends BaseFileConfig implements ConfigScope {
 
     @ConfigOption
     @Description('Path to the file.')
-    Path file
+    final Path file
 
     @ConfigOption
     @Description('Whether to enable the file creation.')
-    Boolean enabled
+    final Boolean enabled
 
     @ConfigOption
     @Description('Whether to overwrite a file if it already exists.')
-    Boolean overwrite
+    final Boolean overwrite
 
     SummaryFileConfig(Map summaryFileConfig, String timestamp=null) {
         super('summary', 'txt')
 
         file = defineFile(summaryFileConfig, timestamp)
-        enabled =  defineEnabled(summaryFileConfig)
+        enabled = defineEnabled(summaryFileConfig)
         overwrite = defineOverwrite(summaryFileConfig)
-        
+
         CO2FootprintConfig.checkKeyUsage(summaryFileConfig, usedKeys)
     }
 }

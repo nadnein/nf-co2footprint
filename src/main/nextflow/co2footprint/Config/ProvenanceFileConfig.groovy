@@ -12,15 +12,15 @@ class ProvenanceFileConfig extends BaseFileConfig implements ConfigScope {
 
     @ConfigOption
     @Description('Path to the file.')
-    Path file
+    final Path file
 
     @ConfigOption
     @Description('Whether to enable the file creation.')
-    Boolean enabled
+    final Boolean enabled
 
     @ConfigOption
     @Description('Whether to overwrite a file if it already exists.')
-    Boolean overwrite
+    final Boolean overwrite
 
     @ConfigOption
     @Description('Whether only emission metrics should be reported in the provenance file.')
@@ -30,7 +30,7 @@ class ProvenanceFileConfig extends BaseFileConfig implements ConfigScope {
         super('provenance', 'json', false)
 
         file = defineFile(provenanceFileConfig, timestamp)
-        enabled =  defineEnabled(provenanceFileConfig)
+        enabled = defineEnabled(provenanceFileConfig)
         overwrite = defineOverwrite(provenanceFileConfig)
 
         emissionMetricsOnly = provenanceFileConfig.containsKey('emissionMetricsOnly') ?

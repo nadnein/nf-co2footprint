@@ -1,5 +1,6 @@
 # New
 ## Bug Fixes:
+- Eliminated `Unrecognized config option` warnings under Nextflow's v2 syntax parser by registering `CO2FootprintConfig` as an extension point and aligning the nested file-config scopes with the v2 `ConfigScope` discovery rules
 
 ## Misc:
 

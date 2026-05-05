@@ -13,12 +13,13 @@ import java.nio.file.Path
  */
 @Slf4j
 class BaseFileConfig {
-    String name
-    String ending
-    boolean defaultEnabled
+    final String name
+    final String ending
+    final boolean defaultEnabled
 
     protected final LinkedHashSet<String> usedKeys = [] as LinkedHashSet<String>
-    
+
+
     /**
      * Parses a file-based sub-configuration for nf-co2footprint and sets up defaults and fallbacks.
      *
@@ -33,7 +34,7 @@ class BaseFileConfig {
 
     /**
      * Define a file path from the given config map and timestamp, as well as predefined variables.
-     * 
+     *
      * @param fileConfig The general config of this file.
      * @param timestamp A timestamp string.
      * @return The path to the file.

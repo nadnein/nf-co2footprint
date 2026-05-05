@@ -8,25 +8,25 @@ import nextflow.script.dsl.Description
 import java.nio.file.Path
 
 @Description('The `co2footprint.trace` scope allows you to configure the trace file of the `nf-co2footprint` plugin.')
-class TraceFileConfig extends BaseFileConfig implements ConfigScope{
+class TraceFileConfig extends BaseFileConfig implements ConfigScope {
 
     @ConfigOption
     @Description('Path to the file.')
-    Path file
+    final Path file
 
     @ConfigOption
     @Description('Whether to enable the file creation.')
-    Boolean enabled
+    final Boolean enabled
 
     @ConfigOption
     @Description('Whether to overwrite a file if it already exists.')
-    Boolean overwrite
-    
+    final Boolean overwrite
+
     TraceFileConfig(Map traceFileConfig, String timestamp=null) {
         super('trace', 'txt')
-        
+
         file = defineFile(traceFileConfig, timestamp)
-        enabled =  defineEnabled(traceFileConfig)
+        enabled = defineEnabled(traceFileConfig)
         overwrite = defineOverwrite(traceFileConfig)
 
         CO2FootprintConfig.checkKeyUsage(traceFileConfig, usedKeys)
