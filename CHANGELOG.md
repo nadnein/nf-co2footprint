@@ -1,6 +1,5 @@
 # New
 ## Bug Fixes:
-- Eliminated `Unrecognized config option` warnings under Nextflow's v2 syntax parser by registering `CO2FootprintConfig` as an extension point and aligning the nested file-config scopes with the v2 `ConfigScope` discovery rules
 
 ## Misc:
 - Made summary file disabled on default with option to enable
@@ -12,6 +11,8 @@
 - CPU power model now applied correctly
 - Unintended report value removal
 - Fixed floating point error for numerical conversion division
+- Eliminated `Unrecognized config option` warnings under Nextflow's v2 syntax parser by registering `CO2FootprintConfig` as an extension point and aligning the nested file-config scopes with the v2 `ConfigScope` discovery rules
+- Fixed missing ci plot in post-run feature
 
 ## Misc:
 - Improved workflow reporting form extension/CLI by deriving and injecting workflow metadata from the provided trace file
