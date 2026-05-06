@@ -9,7 +9,7 @@ The following parameters are currently available:
 
 - **`trace`**  
   Map containing:
-    - `enabled`: Whether to produce this file
+    - `enabled`: Whether to produce this file, defaults to `true`
     - `file`: Name of the `.txt` carbon footprint report containing the energy consumption, estimated CO₂ emission, and other relevant metrics for each task.
     - `overwrite`: whether to overwrite the file, if it already exists.
 
@@ -17,7 +17,7 @@ The following parameters are currently available:
 
 - **`summary`**  
   Map containing:
-    - `enabled`: Whether to produce this file
+    - `enabled`: Whether to produce this file, defaults to `false`
     - `file`: Name of the `.txt` carbon footprint summary file containing the total energy consumption and total estimated CO₂ emission of the pipeline run.
     - `overwrite`: Whether to overwrite the file, if it already exists.
 
@@ -25,7 +25,7 @@ The following parameters are currently available:
 
 - **`report`**  
   Map containing:
-    - `enabled`: Whether to produce this file
+    - `enabled`: Whether to produce this file, defaults to `true`
     - `file`: Name of the HTML report containing information about the entire carbon footprint, overview plots, and more detailed task-specific metrics.
     - `overwrite`: Whether to overwrite the file, if it already exists.
     - `maxTasks`: Maximum number of tasks which are included into the report.
@@ -34,7 +34,7 @@ The following parameters are currently available:
 
 - **`provenance`**  
   Map containing:
-    - `enabled`: Whether to produce this file
+    - `enabled`: Whether to produce this file, defaults to `false`
     - `file`: Name of the data/machine-actionable file containing all metrics that were used during footprint calculation in a structured way.
     - `overwrite`: Whether to overwrite the file, if it already exists.
     - `emissionMetricsOnly`: Whether to only include emission metrics, such as CO₂ equivalents and electricity consumption.
