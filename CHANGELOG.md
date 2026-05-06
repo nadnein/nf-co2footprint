@@ -1,11 +1,44 @@
 # New
 ## Bug Fixes:
+
+## Misc:
+
+## Features:
+
+# 1.3.0
+## Bug Fixes:
+- CPU power model now applied correctly
+- Unintended report value removal
+- Fixed floating point error for numerical conversion division
+- Eliminated `Unrecognized config option` warnings under Nextflow's v2 syntax parser by registering `CO2FootprintConfig` as an extension point and aligning the nested file-config scopes with the v2 `ConfigScope` discovery rules
+- Fixed missing ci plot in post-run feature
+
+## Misc:
+- Improved workflow reporting form extension/CLI by deriving and injecting workflow metadata from the provided trace file
+- Added full integration test
+- Adapted to Nextflow 26
+- Reworked `Bytes`, such that it can take binary and decimal-based values
+
+## Features:
+- Transformation of data file to provenance file with schema.org / bioschemas.org type annotation in JSON-LD data format
+
+# 1.2.1
+## Bug Fixes:
+- Total values from workflow in report
+- Missing newlines in non-ANSI logging
+
+## Misc:
+- Aligned Session tracking with Nextflow's trace tracking
+
+## Features:
+- New CI reporting of failed file comparisons
+
+# 1.2.0
+## Bug Fixes:
 - Plot display of titles and axes names in report
 - Accumulation of dates
 - Never initialized observer called for session emissions on CLI command
 - Included descendant processes into session tracking
-- Total values from workflow in report
-- Missing newlines in non-ANSI logging
 
 ## Misc:
 - Improved the testing of log messages
@@ -14,7 +47,6 @@
 - Added recommendation for market-based CI usage
 - Single values in process summary plot
 - Numbers that are not in Double format are now accepted for config values
-- Aligned Session tracking with Nextflow's trace tracking
 
 ## Features:
 - Updated the config syntax inline with standard Nextflow style
@@ -27,7 +59,6 @@
 - Usage of TDP per logical core, becaus this corresponds best to the `cpus` trace metric
 - Tracking of whole session emissions
 - Precursor of machine-actionable file
-- New CI reporting of failed file comparisons
 
 # Version 1.1.0
 ## Bug Fixes:
