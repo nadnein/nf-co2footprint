@@ -58,23 +58,19 @@ class CO2FootprintConfig implements ConfigScope {
     private final String executor
     final LinkedHashSet<String> usedKeys = [] as LinkedHashSet<String>
 
-    @ConfigOption(types=[Map])
     @Description('Configuration for the trace file.')
     final TraceFileConfig trace
 
-    @ConfigOption(types=[Map])
     @Description('Configuration for the summary file.')
     final SummaryFileConfig summary
 
-    @ConfigOption(types=[Map])
     @Description('Configuration for the report file.')
     final ReportFileConfig report
 
-    @ConfigOption(types=[Map])
     @Description('Configuration for the provenance data/machine-readable file.')
     final ProvenanceFileConfig provenance
 
-    @ConfigOption(types=[GString])
+    @ConfigOption
     @Description('Location GeoCode from Electricity maps.')
     final String location
 
@@ -82,19 +78,19 @@ class CO2FootprintConfig implements ConfigScope {
     @Description('Location-based carbon intensity (CI).')
     final CiRecord ci
 
-    @ConfigOption(types=[Number])
+    @ConfigOption
     @Description('Market-based carbon intensity (CI).')
     final BigDecimal ciMarket
 
-    @ConfigOption(types=[GString])
+    @ConfigOption
     @Description('Electricity-maps API token.')
     final String emApiKey
 
-    @ConfigOption(types=[Number])
+    @ConfigOption
     @Description('Power usage effectiveness (PUE) of the data centre.')
     BigDecimal pue
 
-    @ConfigOption(types=[Number])
+    @ConfigOption
     @Description('Power draw of memory [W per GB].')
     final BigDecimal powerdrawMem
 
@@ -102,21 +98,27 @@ class CO2FootprintConfig implements ConfigScope {
     @Description('Turns off pattern matching of CPU names.')
     final Boolean ignoreCpuModel
 
-    @ConfigOption(types=[Number])
+    @ConfigOption
     @Description('Default powerdraw of the CPU.')
     final BigDecimal powerdrawCpuDefault
 
-    @ConfigOption(types=[String, GString])
+    @ConfigOption
     @Description('Path to a custom CPU TDP file.')
     final Path customCpuTdpFile
 
-    @ConfigOption(types=[GString])
+    @ConfigOption
     @Description('Type of computer on which the workflow is run [\'local\', \'compute cluster\', \'\'].')
     String machineType
 
     @ConfigOption
     @Description('A power model function that takes the parameter `coreUsage`.')
     final Closure<Number> cpuPowerModel
+
+    /**
+     * No-arg constructor required by Nextflow's v2 config parser to
+     * discover and validate config options at parse time.
+     */
+    CO2FootprintConfig() {}
 
     /**
      * Loads configuration from a map and sets up defaults and fallbacks.

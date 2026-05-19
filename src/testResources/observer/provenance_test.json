@@ -21,7 +21,7 @@
     },
     "energy_consumption": {
         "@type": "schema:QuantitativeValue",
-        "value": 14.0175,
+        "value": 14.01750,
         "unitText": "Wh",
         "additionalProperty": {
             "readable": "14.02 Wh"
@@ -53,7 +53,7 @@
     },
     "memory": {
         "@type": "schema:QuantitativeValue",
-        "value": 7516192768,
+        "value": 7E+9,
         "unitText": "B",
         "additionalProperty": {
             "readable": "7 GB"
@@ -142,7 +142,7 @@
             },
             "energy_consumption": {
                 "@type": "schema:QuantitativeValue",
-                "value": 14.0175,
+                "value": 14.01750,
                 "unitText": "Wh",
                 "additionalProperty": {
                     "readable": "14.02 Wh"
@@ -174,7 +174,7 @@
             },
             "memory": {
                 "@type": "schema:QuantitativeValue",
-                "value": 7516192768,
+                "value": 7E+9,
                 "unitText": "B",
                 "additionalProperty": {
                     "readable": "7 GB"
@@ -263,7 +263,7 @@
                     },
                     "energy_consumption": {
                         "@type": "schema:QuantitativeValue",
-                        "value": 14.0175,
+                        "value": 14.01750,
                         "unitText": "Wh",
                         "additionalProperty": {
                             "readable": "14.02 Wh"
@@ -295,7 +295,7 @@
                     },
                     "memory": {
                         "@type": "schema:QuantitativeValue",
-                        "value": 7516192768,
+                        "value": 7E+9,
                         "unitText": "B",
                         "additionalProperty": {
                             "readable": "7 GB"

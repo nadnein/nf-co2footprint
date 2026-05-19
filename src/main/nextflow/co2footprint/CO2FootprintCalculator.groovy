@@ -100,8 +100,8 @@ class CO2FootprintCalculator {
 
         /* ===== Memory Information ===== */
 
-        final Long requestedMemory = trace.get('memory') as Long        // [bytes]
-        final Long maxRequiredMemory = trace.get('peak_rss') as Long    // [bytes]
+        final BigInteger requestedMemory = trace.get('memory') as BigInteger        // [bytes]
+        final BigInteger maxRequiredMemory = trace.get('peak_rss') as BigInteger    // [bytes]
 
         // Assign the final memory value
         final BigDecimal memory
@@ -175,9 +175,9 @@ class CO2FootprintCalculator {
             ci,
             ciMarket,
             cpuUsage,
-            memory as Long,
+            memory,
             runtime_ms,
-            numberOfCores as Integer,
+            numberOfCores,
             pue,
             powerdrawPerCore,
             powerdrawMem,

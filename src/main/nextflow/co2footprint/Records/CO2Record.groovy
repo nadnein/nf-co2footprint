@@ -89,7 +89,7 @@ class CO2Record extends TraceRecord {
     */
     CO2Record(
         TraceRecord traceRecord, BigDecimal energy, BigDecimal co2e, BigDecimal co2eMarket, BigDecimal ci, BigDecimal ciMarket,
-        BigDecimal cpuUsage, Long memory, BigDecimal time,  Integer cpus, BigDecimal pue, BigDecimal powerdrawCPU, BigDecimal powerdrawMem,
+        BigDecimal cpuUsage, BigDecimal memory, BigDecimal time, Integer cpus, BigDecimal pue, BigDecimal powerdrawCPU, BigDecimal powerdrawMem,
         String cpuPowerModel, String cpu_model, BigDecimal rawEnergyProcessor, BigDecimal rawEnergyMemory
     ) {
         // Add trace Record values
@@ -257,7 +257,7 @@ class CO2Record extends TraceRecord {
             case 'powerdraw_memory' ->  new Quantity(value, '', 'W').toReadable()
             case 'pue' ->  new Quantity(value).toReadable()
             case '%cpu' ->  new Percentage(value).toReadable()
-            case 'memory' ->  new Bytes(value, 'G', 'B').toReadable()
+            case 'memory' ->  new Bytes(value, 'G').toReadable()
             case 'raw_energy_processor' ->  new Quantity(value, 'k', 'Wh').toReadable()
             case 'raw_energy_memory' ->  new Quantity(value, 'k', 'Wh').toReadable()
             default -> getFmtStr(key)
