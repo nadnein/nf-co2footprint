@@ -22,7 +22,7 @@
     },
     "CO2e": {
         "@type": "schema:QuantitativeValue",
-        "value": 0.00308319891332256000,
+        "value": 0.0031491241092525752524800000,
         "unitText": "g",
         "additionalProperty": {
             "readable": "3.15 mg"
@@ -129,7 +129,7 @@
             },
             "CO2e": {
                 "@type": "schema:QuantitativeValue",
-                "value": 0.00308319891332256000,
+                "value": 0.0031491241092525752524800000,
                 "unitText": "g",
                 "additionalProperty": {
                     "readable": "3.15 mg"
@@ -250,7 +250,7 @@
                     },
                     "CO2e": {
                         "@type": "schema:QuantitativeValue",
-                        "value": 0.00103584674953440000,
+                        "value": 0.0010578218148444050841600000,
                         "unitText": "g",
                         "additionalProperty": {
                             "readable": "1.06 mg"
@@ -371,7 +371,7 @@
                     },
                     "CO2e": {
                         "@type": "schema:QuantitativeValue",
-                        "value": 0.00204735216378816000,
+                        "value": 0.0020913022944081701683200000,
                         "unitText": "g",
                         "additionalProperty": {
                             "readable": "2.09 mg"

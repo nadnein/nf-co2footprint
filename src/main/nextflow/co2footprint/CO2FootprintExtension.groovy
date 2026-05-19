@@ -137,7 +137,6 @@ class CO2FootprintExtension extends PluginExtensionPoint {
 
         // Collect CO2Records from traces & optionally write the corresponding files
         traceRecords.each { TraceRecord traceRecord ->
-            observer.recordStarted(traceRecord)
             observer.aggregateRecords(traceRecord, true)
         }
 
@@ -168,7 +167,6 @@ class CO2FootprintExtension extends PluginExtensionPoint {
 
         observer.workflowStats.name = co2RecordTree.descentTo('workflow')[0].name
         for (CO2RecordTree taskTree : co2RecordTree.descentTo('task')) {
-            observer.recordStarted(taskTree.co2Record)
             observer.aggregateRecords(taskTree.co2Record, true)
         }
 

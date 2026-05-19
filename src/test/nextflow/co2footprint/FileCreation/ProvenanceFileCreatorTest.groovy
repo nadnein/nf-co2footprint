@@ -20,11 +20,11 @@ class ProvenanceFileCreatorTest extends Specification {
                 new CO2Record([
                         task_id: '111',
                         status: 'COMPLETED',
-                        energy_consumption: 14.0175 as BigDecimal,
-                        CO2e: 6.7284 as BigDecimal,
+                        energy_consumption: 14.01750 as BigDecimal,
+                        CO2e: 6.72840000 as BigDecimal,
                         carbon_intensity: 480.0 as BigDecimal,
                         '%cpu': 100.0 as BigDecimal,
-                        memory: (7 as Long) * (1024**3 as Long) , // 7 GB
+                        memory: (7 as Long) * (1000**3 as Long) , // 7 GB
                         realtime: (1 as Long) * (3600000 as Long), // 1 h
                         cpus: 1,
                         powerdraw_cpu: 11.41 as BigDecimal,
