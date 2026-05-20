@@ -170,7 +170,7 @@ class CO2Record extends TraceRecord {
             return Calculator.min(thisValue, newValue)
         }
 
-        // For string/date-like fields, store all unique values in a Set
+        // For string fields, store all unique values in a Set
         else if ((key in ['cpu_model', 'status', 'name', 'cpu_power_model']) || (FIELDS.get(key) in ['str'])) {
             return thisValue == newValue ? thisValue : null
         }
