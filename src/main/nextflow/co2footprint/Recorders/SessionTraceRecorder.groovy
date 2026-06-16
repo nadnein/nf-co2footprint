@@ -3,10 +3,12 @@ package nextflow.co2footprint.Recorders
 import com.sun.management.OperatingSystemMXBean
 import groovy.util.logging.Slf4j
 import nextflow.Session
+import nextflow.processor.TaskRun
 import nextflow.trace.TraceRecord
 import oshi.SystemInfo
 import oshi.driver.linux.proc.ProcessStat
 import oshi.hardware.CentralProcessor
+import oshi.hardware.GlobalMemory
 import oshi.software.os.OSProcess
 import oshi.software.os.OperatingSystem
 import oshi.software.os.linux.LinuxOperatingSystem
@@ -14,6 +16,7 @@ import oshi.util.tuples.Triplet
 
 import java.lang.management.ManagementFactory
 import java.lang.management.RuntimeMXBean
+import java.util.function.Predicate
 
 /**
  * A Recorder of trace values for a Nextflow session, which can be attached after startup
@@ -26,6 +29,7 @@ class SessionTraceRecorder {
     private final OperatingSystemMXBean  osBean      = ManagementFactory.getOperatingSystemMXBean() as OperatingSystemMXBean
     private final SystemInfo             systemInfo  = new SystemInfo()
     private final CentralProcessor       processor   = systemInfo.hardware.processor
+    private final GlobalMemory           memory      = systemInfo.hardware.memory
     private final OperatingSystem        os          = systemInfo.operatingSystem
 
     // Sampling settings
@@ -176,18 +180,36 @@ class SessionTraceRecorder {
     }
 
     /**
+     * A predicate to exclude Nextflow Task Runs
+     */
+    Predicate<OSProcess> noNextflowTaskRuns = { OSProcess process -> process.commandLine.contains(TaskRun.CMD_RUN) }
+
+    /**
+     * Collect all descendants that are part of the head job recursively by excluding Nextflow Task Runs
+     * 
+     * @param process The root process for which the head job descendents are searched
+     * @return All descendent processes that are not associated with tasks
+     */
+    List<OSProcess> collectHeadDescendants(OSProcess process) {
+        allProcesses[process.processID] = process
+        
+        List<OSProcess> headChildren = os.getChildProcesses(process.processID, noNextflowTaskRuns, null, 0)
+        
+        headChildren.each { OSProcess childProcess -> headChildren.addAll( collectHeadDescendants(childProcess) ) }
+        headChildren.add(process)
+        
+        return headChildren
+    }
+
+    /**
      * Sample memory information and update children.
      */
     void sample() {
         // Update root process information
         process.updateAttributes()
-
+        
         // Collect active descendant processes
-        List<OSProcess> activeDescendants = os.getDescendantProcesses(pid, null, null, 0)
-        List<OSProcess> activeProcesses = [process] + activeDescendants
-
-        // Enter the active descendants into the map
-        activeDescendants.each({ OSProcess p -> allProcesses[p.processID] = p })
+        List<OSProcess> activeProcesses = collectHeadDescendants(process)
 
         if (process != null) {
             MemorySample sample = new MemorySample(
