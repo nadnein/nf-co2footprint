@@ -6,12 +6,11 @@ import nextflow.Session
 import nextflow.processor.TaskRun
 import nextflow.trace.TraceRecord
 import oshi.SystemInfo
-import oshi.driver.linux.proc.ProcessStat
 import oshi.hardware.CentralProcessor
-import oshi.hardware.GlobalMemory
+import oshi.software.common.os.linux.LinuxOperatingSystem
 import oshi.software.os.OSProcess
 import oshi.software.os.OperatingSystem
-import oshi.software.os.linux.LinuxOperatingSystem
+import oshi.util.driver.linux.proc.ProcessStat
 import oshi.util.tuples.Triplet
 
 import java.lang.management.ManagementFactory
@@ -19,21 +18,23 @@ import java.lang.management.RuntimeMXBean
 import java.util.function.Predicate
 
 /**
- * A Recorder of trace values for a Nextflow session, which can be attached after startup
+ * A Recorder of trace values for a Nextflow head job, which can be attached after startup
  * to capture timepoints before workflow invocation.
  */
 @Slf4j
-class SessionTraceRecorder {
+class HeadJobTraceRecorder {
+    // Constants
+    static final String headJobSuffix = 'head_job'
+    
     // OSHI info handles
     private final RuntimeMXBean          runtimeBean = ManagementFactory.getRuntimeMXBean()
     private final OperatingSystemMXBean  osBean      = ManagementFactory.getOperatingSystemMXBean() as OperatingSystemMXBean
     private final SystemInfo             systemInfo  = new SystemInfo()
     private final CentralProcessor       processor   = systemInfo.hardware.processor
-    private final GlobalMemory           memory      = systemInfo.hardware.memory
     private final OperatingSystem        os          = systemInfo.operatingSystem
 
     // Sampling settings
-    private final Timer timer = new Timer('session-trace-recorder', true)
+    private final Timer timer = new Timer('head-job-trace-recorder', true)
 
     // Process information
     private int pid
@@ -42,20 +43,21 @@ class SessionTraceRecorder {
 
     // Aggregation
     final List<MemorySample> samples = [].asSynchronized() as List<MemorySample>
-    final TraceRecord sessionRecord = new TraceRecord()
+    final TraceRecord headJobRecord = new TraceRecord()
 
     /**
-     * Start the recording of a session.
+     * Start the recording of a head job.
      */
     void start() {
         pid = runtimeBean.pid as int
         process = os.getProcess(pid)
         allProcesses.put(pid, process)
 
-        sessionRecord.putAll(
+        headJobRecord.putAll(
                 [
+                        task_id:        '-1',
                         container:      'JVM',
-                        tag:            'Session',
+                        tag:            'Head job',
                         status:         'SUBMITTED',
                         submit:         runtimeBean.startTime,
                         attempt:        0,
@@ -74,22 +76,21 @@ class SessionTraceRecorder {
         // Start sampling for memory
         timer.scheduleAtFixedRate(new TimerTask() { void run() { sample() } } , 0, 500)
 
-        sessionRecord.putAll(
+        headJobRecord.putAll(
                 [
-                        task_id:        '-1',
                         hash:           session.hashCode(),
                         native_id:      pid as String,
-                        process:        'session',
-                        name:           session.getRunName() + '-session',
+                        process:        'head job',
+                        name:           session.getRunName() + '-' + headJobSuffix,
                         status:         'STARTED',
                         start:          System.currentTimeMillis(),
-                        attempt:        sessionRecord.store.get('attempt', 0) + 1
+                        attempt:        headJobRecord.store.get('attempt', 0) + 1
                 ]
         )
     }
 
     /**
-     * Create a finalized session specific {@link TraceRecord} from the current samples.
+     * Create a finalized head job specific {@link TraceRecord} from the current samples.
      */
     TraceRecord report() {
         long endTimestamp = System.currentTimeMillis()
@@ -97,33 +98,14 @@ class SessionTraceRecorder {
         // Reduce the process to values
         List<OSProcess> processList = allProcesses.values() as List<OSProcess>
         processList.each({ OSProcess p -> p.updateAttributes() })
+        
+        Double cpuUsage = getCPUUsage(processList)
 
-        Map<ProcessStat.PidStat, Long> rootStats = getPidStats(pid)
-
-        // Determine CPU usage
-        Double cpuUsage
-        if (rootStats != null) {
-            // Accumulate the running ticks of root including waiting time for children
-            Long cpuTime = rootStats.get(ProcessStat.PidStat.UTIME) + rootStats.get(ProcessStat.PidStat.STIME) +
-                    rootStats.get(ProcessStat.PidStat.CUTIME) + rootStats.get(ProcessStat.PidStat.CSTIME)
-            // Convert from jiffies to ms
-            cpuTime = (cpuTime * 1000 / LinuxOperatingSystem.getHz()) as Long
-
-            // Calculate elapsed time since process start
-            Long elapsedTime = endTimestamp - process.startTime
-
-            cpuUsage = cpuTime / elapsedTime
-            log.debug("Calculated CPU usage for PID ${pid}: ${cpuUsage}")
-        }
-        else {
-            cpuUsage = processList.collect({ OSProcess p -> p.getProcessCpuLoadCumulative() }).sum() as double
-        }
-
-        sessionRecord.putAll(
+        headJobRecord.putAll(
                 [
                         status:         'COMPLETED',
                         complete:       endTimestamp,
-                        duration:       endTimestamp - (sessionRecord.get('submit') as long),
+                        duration:       endTimestamp - (headJobRecord.get('submit') as long),
                         realtime:       runtimeBean.uptime,
                         memory:         Runtime.getRuntime().maxMemory(),
                         '%cpu':         cpuUsage * 100,
@@ -137,8 +119,9 @@ class SessionTraceRecorder {
         if (samples) {
             List<Long> rss = samples.collect({ MemorySample sample -> sample.rssBytes})
             List<Long> vmem = samples.collect({ MemorySample sample -> sample.virtualMemoryBytes})
-            sessionRecord.putAll(
+            headJobRecord.putAll(
                     [
+                            memory:         rss.average(),
                             rss:            rss.average(),
                             vmem:           vmem.average(),
                             peak_rss:       rss.max(),
@@ -147,7 +130,7 @@ class SessionTraceRecorder {
             )
         }
 
-        return sessionRecord
+        return headJobRecord
     }
 
     /**
@@ -156,6 +139,34 @@ class SessionTraceRecorder {
     void stop() {
         timer.cancel()
         timer.purge()
+    }
+
+    /**
+     * Determine CPU usage of a list of processes. Either with their children (only works on Linux) or only of themselves.
+     * 
+     * @param processList List of processes
+     * @param includeChildWait Whether or not to include the wait time for children
+     * @return The number of computing cores that were used on average by the process over its execution time
+     */
+    Double getCPUUsage(List<OSProcess> processList, boolean includeChildWait=false) {
+        if (includeChildWait) {
+            return processList.sum( { OSProcess process -> 
+                Map<ProcessStat.PidStat, Long> pidStats = getPidStats(process.processID)
+                // Accumulate the running ticks of root including waiting time for children
+                Long cpuTime = [
+                        ProcessStat.PidStat.UTIME, ProcessStat.PidStat.STIME,
+                        ProcessStat.PidStat.CUTIME, ProcessStat.PidStat.CSTIME
+                ].collect( { ProcessStat.PidStat statPos -> pidStats.get(statPos)} ).sum() as Long
+                
+                // Convert from jiffies to ms
+                cpuTime = (cpuTime * 1000 / LinuxOperatingSystem.getHz()) as Long
+    
+                 return cpuTime / process.upTime
+            }) as Double
+        }
+        else {
+            return processList.collect({ OSProcess p -> p.getProcessCpuLoadCumulative() }).sum() as double
+        }
     }
 
     /**
@@ -182,7 +193,7 @@ class SessionTraceRecorder {
     /**
      * A predicate to exclude Nextflow Task Runs
      */
-    Predicate<OSProcess> noNextflowTaskRuns = { OSProcess process -> process.commandLine.contains(TaskRun.CMD_RUN) }
+    Predicate<OSProcess> noNextflowTaskRuns = { OSProcess process -> !process.commandLine.contains(TaskRun.CMD_RUN) }
 
     /**
      * Collect all descendants that are part of the head job recursively by excluding Nextflow Task Runs
@@ -194,11 +205,13 @@ class SessionTraceRecorder {
         allProcesses[process.processID] = process
         
         List<OSProcess> headChildren = os.getChildProcesses(process.processID, noNextflowTaskRuns, null, 0)
+        List<OSProcess> headDescendents = [process]
         
-        headChildren.each { OSProcess childProcess -> headChildren.addAll( collectHeadDescendants(childProcess) ) }
-        headChildren.add(process)
+        headChildren.each { OSProcess childProcess ->
+            headDescendents.addAll( collectHeadDescendants(childProcess) )
+        }
         
-        return headChildren
+        return headDescendents
     }
 
     /**
@@ -214,9 +227,9 @@ class SessionTraceRecorder {
         if (process != null) {
             MemorySample sample = new MemorySample(
                     timestamp: System.currentTimeMillis(),
-
-                    // Memory
-                    rssBytes: activeProcesses.collect({ OSProcess p -> p.residentSetSize}).sum() as Long,
+                    
+                    // Memory - The RSS value gives the best approximation for allocated resources by the head job
+                    rssBytes: activeProcesses.collect({ OSProcess p -> p.residentMemory}).sum() as Long,
                     virtualMemoryBytes: activeProcesses.collect({ OSProcess p -> p.virtualSize}).sum() as Long,
             )
 

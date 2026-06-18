@@ -187,7 +187,7 @@ class CO2FootprintObserver implements TraceObserverV2 {
         log.debug('Workflow started -- CO2Footprint file instantiated')
 
         CO2FootprintPlugin co2footprintPlugin = CO2FootprintPlugin.getPlugin()
-        co2footprintPlugin?.sessionTraceRecorder?.attachSession(session)
+        co2footprintPlugin?.headJobTraceRecorder?.attachSession(session)
 
         // Construct session and aggregator
         this.session = session
