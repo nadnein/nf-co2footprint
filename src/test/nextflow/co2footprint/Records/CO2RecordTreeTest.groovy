@@ -36,7 +36,7 @@ class CO2RecordTreeTest extends Specification {
 
         co2Record = new CO2Record(
                 traceRecord, 2.0, 200.0, null, 100.0,
-                1.0, 10, 1.0, 1, 7.0, 'Some model', 5.0d, 5.0d
+                1.0, 10, 3600000.0, 1, 7.0, 'Some model', 5.0d, 5.0d
         )
 
         CO2RecordTree process1 = recordsTree.addChild(new CO2RecordTree('process1', [level: 'process']))
@@ -53,7 +53,7 @@ class CO2RecordTreeTest extends Specification {
             process.addChild(new CO2RecordTree("task_${counter}", [level: 'task'],
                 new CO2Record(
                     traceRecord2, value, value, null, 475.0,
-                    100.0, 1000**3, 1.0d, 1, 12, 'Unknown model', 5.0d, 5.0d
+                    100.0, 1000**3, 3600000.0d, 1, 12, 'Unknown model', 5.0d, 5.0d
                 )
             ))
         }

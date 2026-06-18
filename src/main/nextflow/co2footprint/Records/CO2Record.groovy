@@ -72,7 +72,7 @@ class CO2Record extends TraceRecord {
     * @param ci            Location-based carbon intensity used for calculation (gCO₂eq/kWh)
     * @param cpuUsage      CPU usage percentage during the task (%)
     * @param memory        Memory used by the task (bytes)
-    * @param time          Time spent on the task (ms)
+    * @param realtime      Realtime spent on the task (ms)
     * @param cpus          Number of CPU cores used
     * @param powerdrawCPU  Power draw (TDP) of the CPU (W)
     * @param cpu_model     CPU model name
@@ -81,7 +81,7 @@ class CO2Record extends TraceRecord {
     */
     CO2Record(
         TraceRecord traceRecord, BigDecimal energy, BigDecimal co2e, BigDecimal co2eMarket, BigDecimal ci,
-        BigDecimal cpuUsage, BigDecimal memory, BigDecimal time, Integer cpus, BigDecimal powerdrawCPU,
+        BigDecimal cpuUsage, BigDecimal memory, BigDecimal realtime, Integer cpus, BigDecimal powerdrawCPU,
         String cpu_model, BigDecimal rawEnergyProcessor, BigDecimal rawEnergyMemory
     ) {
         // Add trace Record values
@@ -96,7 +96,7 @@ class CO2Record extends TraceRecord {
             'carbon_intensity':         ci,
             '%cpu':                     cpuUsage,
             'memory':                   memory,
-            'realtime':                 Duration.of(time, 'h').scale('ms').value,
+            'realtime':                 realtime,
             'cpus':                     cpus,
             'powerdraw_cpu':            powerdrawCPU,
             'cpu_model':                cpu_model,

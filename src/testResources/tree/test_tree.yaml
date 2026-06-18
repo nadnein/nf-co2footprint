@@ -66,7 +66,7 @@ children:
       raw: &id007 {value: 1E+10, type: Bytes, unit: B, scale: ''}
       readable: 10 GB
     realtime:
-      raw: &id008 {value: 3600000.0000, type: Duration, unit: ms, scale: ''}
+      raw: &id008 {value: 3600000, type: Duration, unit: ms, scale: ''}
       readable: 1h
     cpus:
       raw: &id009 {value: 1, type: Number, unit: '', scale: ''}

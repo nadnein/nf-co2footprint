@@ -358,7 +358,7 @@
                         "value": "PT1S",
                         "unitText": "ms",
                         "additionalProperty": {
-                            "readable": "1s 0ms"
+                            "readable": "1s"
                         }
                     },
                     "cpus": {

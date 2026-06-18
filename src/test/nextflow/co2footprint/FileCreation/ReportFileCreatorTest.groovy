@@ -79,7 +79,7 @@ class ReportFileCreatorTest extends Specification{
 
         CO2Record co2Record = new CO2Record(
             traceRecord, 100.0d, 10.0d, null, 475.0, 100.0, 7,
-            1.0d, 1, 12, 'Unknown model', 0.5d, 0.5d
+            3600000, 1, 12, 'Unknown model', 0.5d, 0.5d
         )
 
         // Define Record treee
