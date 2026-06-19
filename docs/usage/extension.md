@@ -22,7 +22,6 @@ The plugin provides some [extension points](https://nextflow.io/docs/latest/plug
 
 Both modes accept the following arguments:
 
-- **tracePath** *(required)*: Path to the execution trace file.
 - **delimiter**: Column separator used in the trace file. Defaults to `'\t'`.
 
 #### From the command line

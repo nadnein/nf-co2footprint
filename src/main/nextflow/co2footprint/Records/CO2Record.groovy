@@ -155,7 +155,7 @@ class CO2Record extends TraceRecord {
             return Calculator.weightedAverage([thisValue, newValue], [store['energy_consumption'], record.store['energy_consumption']])
         }
 
-        // Weighted average by time for CPU usage
+        // Weighted average by time
         else if (key in ['%cpu', '%mem', 'vmem', 'rss', 'cpus', 'pue']) {
             return Calculator.weightedAverage([thisValue, newValue], [store['realtime'], record.store['realtime']])
         }

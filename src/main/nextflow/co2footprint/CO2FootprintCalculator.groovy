@@ -55,10 +55,10 @@ class CO2FootprintCalculator {
     *
     * @param trace   The TraceRecord containing task resource usage.
     * @param timeCiRecords Collector for carbon intensity records.
-    * @param postRun Whether the computation is performed after the run (true) or during the run (false). Used to determine whether previous values are used if not set explicitly otherwise.
+    * @param isPostRun Whether the computation is performed after the run (true) or during the run (false). Used to determine whether previous values are used if not set explicitly otherwise.
     * @return        CO2Record with energy consumption, CO₂ emissions, and task/resource details.
     */
-    CO2Record computeTaskCO2footprint(TraceRecord trace, CiRecordCollector timeCiRecords, boolean postRun=false) {
+    CO2Record computeTaskCO2footprint(TraceRecord trace, CiRecordCollector timeCiRecords, boolean isPostRun=false) {
 
         /* ===== CPU Information ===== */
 
@@ -86,12 +86,12 @@ class CO2FootprintCalculator {
         // Per-core power draw: either custom polynomial model or TDP lookup [W/core]
         final Closure<Number> cpuPowerModel = useConfiguredOrPrevious(
                 config, ['cpuPowerModel'], config.cpuPowerModel,
-                trace, 'cpu_power_model', postRun
+                trace, 'cpu_power_model', isPostRun
         )
 
         // Assigns powerdraw per core in the following order: 1. Custom polynomial model 2. TDP lookup based on CPU model 3. Previous value from trace
         final BigDecimal powerdrawPerCore
-        if (postRun && !tdpDataMatrix.matchModel(cpuModel, false) && trace.containsKey('powerdraw_cpu')) {
+        if (isPostRun && !tdpDataMatrix.matchModel(cpuModel, false) && trace.containsKey('powerdraw_cpu')) {
             powerdrawPerCore = trace.get('powerdraw_cpu') as BigDecimal
         }
         else {
@@ -126,7 +126,7 @@ class CO2FootprintCalculator {
 
         final BigDecimal powerdrawMem  = useConfiguredOrPrevious(
                 config, ['powerdrawMem'], config.powerdrawMem,
-                trace, 'powerdraw_memory', postRun
+                trace, 'powerdraw_memory', isPostRun
         ) // [W per GB]
 
         /* ===== Data Center Effectiveness and Carbon Intensity ===== */
@@ -134,19 +134,19 @@ class CO2FootprintCalculator {
          // PUE: power usage effectiveness of datacenter [ratio] (>= 1.0)
         final BigDecimal pue = useConfiguredOrPrevious(
                 config, ['pue'], config.pue,
-                trace, 'pue', postRun
+                trace, 'pue', isPostRun
         )
 
         // CI: carbon intensity [gCO₂e kWh−1]
         final BigDecimal ci = useConfiguredOrPrevious(
                 config, ['ci', 'emApiKey'], timeCiRecords.getCi(trace),
-                trace, 'carbon_intensity', postRun
+                trace, 'carbon_intensity', isPostRun
         )
 
         // Personal energy mix based carbon intensity
         final BigDecimal ciMarket = useConfiguredOrPrevious(
                 config, ['ciMarket'], config.ciMarket,
-                trace, 'carbon_intensity_market', postRun
+                trace, 'carbon_intensity_market', isPostRun
         )
 
 
@@ -240,7 +240,10 @@ class CO2FootprintCalculator {
     }
 
     /**
-     * Utility method to use the from the trace value from a previous run if the entry was not explicitly set in the config.
+     * Utility method to use the trace value from a previous run if:
+     * 1. We are in a post-run setting
+     * 2. The entry was not explicitly set in the config
+     * 3. The entry is in the `TraceRecord`
      *
      * @param config The CO2FootprintConfig object containing the configuration for the current run
      * @param configKeys The entry keys in the config that trigger the value to be set explicitly
@@ -251,9 +254,9 @@ class CO2FootprintCalculator {
      */
     static <T> T useConfiguredOrPrevious(
             CO2FootprintConfig config, List<String> configKeys, T configValue,
-            TraceRecord trace, String traceKey, boolean postRun
+            TraceRecord trace, String traceKey, boolean isPostRun
     ){
-        if (postRun && (!configKeys.collect({ String configKey -> configKey in config.usedKeys }).any()) && trace.containsKey(traceKey)) {
+        if (isPostRun && (!configKeys.collect({ String configKey -> configKey in config.usedKeys }).any()) && trace.containsKey(traceKey)) {
             return trace.get(traceKey) as T
         }
         else {

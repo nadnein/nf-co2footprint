@@ -66,14 +66,15 @@ class ProvenanceFileCreator extends BaseFileCreator {
     /**
      * Transform the map to JSON-LD format with schema.org/bioschema.org context and types.
      *
-     * @param original The original map from CO2RecordTree.toMap()
+     * @param treeMap The original map from CO2RecordTree.toMap()
+     * @param isRoot Whether or not the map is at its root position
      * @return The transformed map with JSON-LD elements
      */
-    private Map<String, Object> transformToJsonLd(Map<String, Object> treeMap, boolean root=true) {
+    private Map<String, Object> transformToJsonLd(Map<String, Object> treeMap, boolean isRoot=true) {
         Map<String, Object> ldMap = [:]
 
         // Add @context at root level
-        if(root) {
+        if(isRoot) {
             ldMap['@context'] = [
                     schema    : 'https://schema.org/',
                     bioschemas: 'https://bioschemas.org',
@@ -188,10 +189,10 @@ class ProvenanceFileCreator extends BaseFileCreator {
      * Recursively read a JSON-LD map and transform it back to the original CO2RecordTree map structure.
      * This is the inverse of transformToJsonLd, and assumes the same JSON-LD structure as produced by that function.
      *
-     * @param treeMap The JSON-LD map to transform back to the original structure
-     * @param root Whether this is the root level of the tree, used to determine the level of the root node
+     * @param ldMap The JSON-LD map to transform back to the original structure
+     * @param isRoot Whether this is the root level of the tree, used to determine the level of the root node
      */
-    static CO2RecordTree readJsonLd(Map<String, Object> ldMap, boolean root=true) {
+    static CO2RecordTree readJsonLd(Map<String, Object> ldMap, boolean isRoot=true) {
 
         // Extracts children recursively
         List<CO2RecordTree> children = []
@@ -247,7 +248,7 @@ class ProvenanceFileCreator extends BaseFileCreator {
 
 
         // Add @type based on metaData.level
-        if (ldMap['@type'] == 'schema:SoftwareApplication' && root) {
+        if (ldMap['@type'] == 'schema:SoftwareApplication' && isRoot) {
             co2RecordTree.metaData['level'] = 'session'
         }
         else {
