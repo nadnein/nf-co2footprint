@@ -7,14 +7,12 @@ import nextflow.processor.TaskRun
 import nextflow.trace.TraceRecord
 import oshi.SystemInfo
 import oshi.hardware.CentralProcessor
-import oshi.software.common.os.linux.LinuxOperatingSystem
 import oshi.software.os.OSProcess
 import oshi.software.os.OperatingSystem
-import oshi.util.driver.linux.proc.ProcessStat
-import oshi.util.tuples.Triplet
 
 import java.lang.management.ManagementFactory
 import java.lang.management.RuntimeMXBean
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * A Recorder of trace values for a Nextflow head job, which can be attached after startup
@@ -38,7 +36,7 @@ class HeadJobTraceRecorder {
     // Process information
     private int pid
     private OSProcess rootProcess
-    private Map<OSProcess, Set<OSProcess>> headProcesses = [:].asSynchronized()
+    private Set<OSProcess> headProcesses = ConcurrentHashMap.newKeySet()
 
     // Aggregation
     final List<MemorySample> samples = [].asSynchronized() as List<MemorySample>
@@ -50,7 +48,7 @@ class HeadJobTraceRecorder {
     void start() {
         pid = runtimeBean.pid as int
         rootProcess = os.getProcess(pid)
-        headProcesses.put(rootProcess, [] as Set)
+        headProcesses.add(rootProcess)
 
         headJobRecord.putAll(
                 [
@@ -95,15 +93,13 @@ class HeadJobTraceRecorder {
         long endTimestamp = System.currentTimeMillis()
 
         // Reduce the process to values
-        Set<OSProcess> processList = headProcesses.keySet()
-        processList.each({ OSProcess p -> p.updateAttributes() })
+        headProcesses.each({ OSProcess p -> p.updateAttributes() })
 
-        Double cpuUsage = getCPUUsage(headProcesses)
-        System.out.println("getProcessCpuLoadCumulative: ${cpuUsage}")
-        System.out.println("Included children (Linux): ${getCPUUsage(headProcesses, true, true)}")
-        System.out.println("Included children: ${getCPUUsage(headProcesses, true, false)}")
-        System.out.println("Without children (Linux): ${getCPUUsage(headProcesses, false, true)}")
-        System.out.println("Without children: ${getCPUUsage(headProcesses, false, false)}")
+        Double cpuUsage = headProcesses.sum({ OSProcess process ->
+            process.userTime + process.kernelTime / process.upTime
+        }) as double
+        System.out.println( cpuUsage)
+        System.out.println( headProcesses.sum({OSProcess p -> p.getProcessCpuLoadCumulative()}))
 
         headJobRecord.putAll(
                 [
@@ -146,68 +142,6 @@ class HeadJobTraceRecorder {
     }
 
     /**
-     * Determine CPU usage of a list of processes. Either with their children (only works on Linux) or only of themselves.
-     * 
-     * @param processes List of processes
-     * @param includeChildWait Whether or not to include the wait time for children
-     * @return The number of computing cores that were used on average by the process over its execution time
-     */
-    Double getCPUUsage(Map<OSProcess, Set<OSProcess>> processes, boolean includeChildWait=false, boolean useLinux=true) {
-        // Linux can just exclude wait time to get the isolated process CPU load
-        if (useLinux && (os instanceof LinuxOperatingSystem)) {
-            Long tickFrequency = (os as LinuxOperatingSystem).getHz()
-            return processes.keySet().collect( { OSProcess process ->
-                // Accumulate the running ticks of the process (including waiting time for children)
-                Long processTime = process.userTime + process.kernelTime
-
-                if (includeChildWait) {
-                    Map<ProcessStat.PidStat, Long> pidStats = getPidStats(process.processID)
-                    Long childrenTime = pidStats.get(ProcessStat.PidStat.CUTIME) + pidStats.get(ProcessStat.PidStat.CSTIME)
-                    
-                    // Convert from jiffies to ms
-                    processTime +=  (childrenTime * 1000 / tickFrequency) as Long
-                }
-
-                 processTime / process.upTime
-            }).sum() as double
-        }
-        // Other OS need to subtract the child load from the parent
-        else {
-            processes.collect({ OSProcess process, Set<OSProcess> children ->
-                Long processTime = process.userTime + process.kernelTime
-                if (includeChildWait) {
-                    children.each({ OSProcess child ->
-                        child.updateAttributes()
-                        processTime += child.userTime + child.kernelTime
-                    })
-                }
-                processTime / process.upTime
-            }).sum() as double
-        }
-    }
-
-    /**
-     * Attempts to fetch the PID stats for the current process.
-     *
-     * @param pid The PID for which to fetch the stats
-     * @return Map of PID stats, or null if the information could not be retrieved (e.g. due to permissions or OS)
-     */
-    Map<ProcessStat.PidStat, Long> getPidStats(Integer pid) {
-        LinuxOperatingSystem
-        if (os instanceof LinuxOperatingSystem) {
-            try {
-                Triplet<String, Character, Map<ProcessStat.PidStat, Long>> stats = ProcessStat.getPidStats(pid)
-                return stats.getC()
-            }
-            catch (Exception e) {
-                log.trace("Failed to get process stats for PID ${pid}: ${e.message}")
-            }
-        }
-
-        return null
-    }
-
-    /**
      * A predicate to exclude Nextflow Task Runs
      */
     Closure<OSProcess> noNextflowTaskRuns = { OSProcess process -> !process.commandLine.contains(TaskRun.CMD_RUN) }
@@ -222,12 +156,7 @@ class HeadJobTraceRecorder {
         List<OSProcess> allChildren = os.getChildProcesses(process.processID, null, null, 0)
         
         // Collect information on process child relationship
-        if (headProcesses.containsKey(process)) {
-            headProcesses[process].addAll( allChildren )
-        }
-        else {
-            headProcesses[process] = allChildren as Set<OSProcess>
-        }
+        headProcesses.add(process)
         
         List<OSProcess> headChildren = allChildren.findAll( noNextflowTaskRuns )
         List<OSProcess> headDescendents = [process]
