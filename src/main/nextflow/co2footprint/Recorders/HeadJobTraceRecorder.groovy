@@ -95,14 +95,6 @@ class HeadJobTraceRecorder {
         // Reduce the process to values
         headProcesses.each({ OSProcess p -> p.updateAttributes() })
 
-        Double cpuUsage = headProcesses.sum({ OSProcess process ->
-            (process.userTime + process.kernelTime) / process.upTime
-        }) as double
-        println('CPU usage:')
-        System.out.println( cpuUsage)
-        println('CPU load:')
-        System.out.println( headProcesses.sum({OSProcess p -> p.getProcessCpuLoadCumulative()}))
-
         headJobRecord.putAll(
                 [
                         status:         'COMPLETED',
@@ -110,11 +102,11 @@ class HeadJobTraceRecorder {
                         duration:       endTimestamp - (headJobRecord.get('submit') as long),
                         realtime:       runtimeBean.uptime,
                         memory:         Runtime.getRuntime().maxMemory(),
-                        '%cpu':         cpuUsage * 100,
-                        read_bytes:     headProcesses.collect({ OSProcess p -> p.bytesRead}).sum() as Long,
-                        write_bytes:    headProcesses.collect({ OSProcess p -> p.bytesWritten}).sum() as Long,
-                        vol_ctxt:       headProcesses.collect({ OSProcess p -> p.minorFaults}).sum() as Long,
-                        inv_ctxt:       headProcesses.collect({ OSProcess p -> p.majorFaults}).sum() as Long,
+                        '%cpu':         headProcesses.sum({OSProcess p -> p.getProcessCpuLoadCumulative()}) as double * 100,
+                        read_bytes:     headProcesses.sum({ OSProcess p -> p.bytesRead}) as Long,
+                        write_bytes:    headProcesses.sum({ OSProcess p -> p.bytesWritten}) as Long,
+                        vol_ctxt:       headProcesses.sum({ OSProcess p -> p.minorFaults}) as Long,
+                        inv_ctxt:       headProcesses.sum({ OSProcess p -> p.majorFaults}) as Long,
                 ] 
         )
 
@@ -185,8 +177,8 @@ class HeadJobTraceRecorder {
                     timestamp: System.currentTimeMillis(),
                     
                     // Memory - The RSS value gives the best approximation for allocated resources by the head job
-                    rssBytes: activeProcesses.collect({ OSProcess p -> p.residentMemory}).sum() as Long,
-                    virtualMemoryBytes: activeProcesses.collect({ OSProcess p -> p.virtualSize}).sum() as Long,
+                    rssBytes: activeProcesses.sum({ OSProcess p -> p.residentMemory}) as Long,
+                    virtualMemoryBytes: activeProcesses.sum({ OSProcess p -> p.virtualSize}) as Long,
             )
 
             samples.add(sample)
