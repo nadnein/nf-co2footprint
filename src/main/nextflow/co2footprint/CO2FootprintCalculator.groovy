@@ -91,7 +91,7 @@ class CO2FootprintCalculator {
 
         // Assigns powerdraw per core in the following order: 1. Custom polynomial model 2. TDP lookup based on CPU model 3. Previous value from trace
         final BigDecimal powerdrawPerCore
-        if (isPostRun && !tdpDataMatrix.matchModel(cpuModel, false) && trace.containsKey('powerdraw_cpu')) {
+        if (isPostRun && !tdpDataMatrix.matchModel(cpuModel, false, false) && trace.containsKey('powerdraw_cpu')) {
             powerdrawPerCore = trace.get('powerdraw_cpu') as BigDecimal
         }
         else {
