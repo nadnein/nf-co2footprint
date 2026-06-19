@@ -1,9 +1,12 @@
 # New
 ## Bug Fixes:
+- Session tracking now applicable to other than local settings
+- Session memory value now accumulation of head job and workflow
 
 ## Misc:
 
 ## Features:
+- Added exclusive head job resource tracking
 
 # 1.3.0
 ## Bug Fixes:
