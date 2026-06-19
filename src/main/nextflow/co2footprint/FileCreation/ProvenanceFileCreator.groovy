@@ -81,6 +81,7 @@ class ProvenanceFileCreator extends BaseFileCreator {
         // Add @type based on metaData.level
         ldMap['@type'] = switch (treeMap.metaData?.level) {
             case 'session' -> 'schema:SoftwareApplication'
+            case 'head' -> 'schema:SoftwareApplication'
             case 'workflow' -> 'bioschemas:ComputationalWorkflow'
             case 'process' -> 'schema:SoftwareApplication'
             case 'task' -> 'schema:Action'
