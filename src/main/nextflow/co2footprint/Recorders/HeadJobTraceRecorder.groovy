@@ -96,9 +96,11 @@ class HeadJobTraceRecorder {
         headProcesses.each({ OSProcess p -> p.updateAttributes() })
 
         Double cpuUsage = headProcesses.sum({ OSProcess process ->
-            process.userTime + process.kernelTime / process.upTime
+            (process.userTime + process.kernelTime) / process.upTime
         }) as double
+        println('CPU usage:')
         System.out.println( cpuUsage)
+        println('CPU load:')
         System.out.println( headProcesses.sum({OSProcess p -> p.getProcessCpuLoadCumulative()}))
 
         headJobRecord.putAll(
@@ -109,10 +111,10 @@ class HeadJobTraceRecorder {
                         realtime:       runtimeBean.uptime,
                         memory:         Runtime.getRuntime().maxMemory(),
                         '%cpu':         cpuUsage * 100,
-                        read_bytes:     processList.collect({ OSProcess p -> p.bytesRead}).sum() as Long,
-                        write_bytes:    processList.collect({ OSProcess p -> p.bytesWritten}).sum() as Long,
-                        vol_ctxt:       processList.collect({ OSProcess p -> p.minorFaults}).sum() as Long,
-                        inv_ctxt:       processList.collect({ OSProcess p -> p.majorFaults}).sum() as Long,
+                        read_bytes:     headProcesses.collect({ OSProcess p -> p.bytesRead}).sum() as Long,
+                        write_bytes:    headProcesses.collect({ OSProcess p -> p.bytesWritten}).sum() as Long,
+                        vol_ctxt:       headProcesses.collect({ OSProcess p -> p.minorFaults}).sum() as Long,
+                        inv_ctxt:       headProcesses.collect({ OSProcess p -> p.majorFaults}).sum() as Long,
                 ] 
         )
 
