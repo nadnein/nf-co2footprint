@@ -2,8 +2,8 @@ name: crazy_tesla
 metaData: {level: workflow}
 values:
   task_id:
-    raw: {value: '111', type: str}
-    readable: '111'
+    raw: {value: '-1', type: str}
+    readable: '-1'
   status:
     raw: {value: COMPLETED, type: str}
     readable: COMPLETED

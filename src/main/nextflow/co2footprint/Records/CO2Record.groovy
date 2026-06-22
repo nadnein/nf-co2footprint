@@ -158,14 +158,14 @@ class CO2Record extends TraceRecord {
             return Calculator.min(thisValue, newValue)
         }
 
-        // For string/date-like fields, store all unique values in a Set
-        else if ((key in ['cpu_model', 'status']) || (FIELDS.get(key) in ['str'])) {
-            return thisValue == newValue ? thisValue : null
-        }
-
         // TaskID can not be accumulated and is replaced by -1 because the result is not a task
         else if(key == 'task_id') {
             return '-1'
+        }
+
+        // For string/date-like fields, store all unique values in a Set
+        else if ((key in ['cpu_model', 'status']) || (FIELDS.get(key) in ['str'])) {
+            return thisValue == newValue ? thisValue : null
         }
 
         // For other numeric fields, sum values safely

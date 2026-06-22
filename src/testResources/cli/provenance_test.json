@@ -5,6 +5,13 @@
     },
     "@id": "urn:co2footprint:Unknown workflow",
     "@type": "bioschemas:ComputationalWorkflow",
+    "task_id": {
+        "@type": "schema:PropertyValue",
+        "value": "-1",
+        "additionalProperty": {
+            "readable": "-1"
+        }
+    },
     "status": {
         "@type": "schema:PropertyValue",
         "value": "COMPLETED",
@@ -103,6 +110,13 @@
         {
             "@id": "urn:co2footprint:NFCORE_RNASEQ:RNASEQ:FASTQ_QC_TRIM_FILTER_SETSTRANDEDNESS:FQ_LINT",
             "@type": "schema:SoftwareApplication",
+            "task_id": {
+                "@type": "schema:PropertyValue",
+                "value": "-1",
+                "additionalProperty": {
+                    "readable": "-1"
+                }
+            },
             "status": {
                 "@type": "schema:PropertyValue",
                 "value": "COMPLETED",
