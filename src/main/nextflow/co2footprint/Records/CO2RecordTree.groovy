@@ -75,6 +75,8 @@ class CO2RecordTree {
         if (!co2Record?.respondsTo('plus')) {
             co2Record = children.collect({ CO2RecordTree child -> child.co2Record }).sum() as CO2Record
         }
+        
+        if(co2Record.get('name') == null) { co2Record.put('name', name) }
 
         return this
     }
@@ -90,7 +92,7 @@ class CO2RecordTree {
                     CO2e_non_cached: { CO2Record record -> record.store.status != 'CACHED' ? record.store.CO2e : null },
                     energy_consumption_non_cached: { CO2Record record -> record.store.status != 'CACHED' ? record.store.energy_consumption : null },
                     CO2e_market: { CO2Record record -> record.store.CO2e_market },
-                    energy_consumption_market: { CO2Record record -> record.store.energy_consumption },
+                    energy_consumption_market: { CO2Record record -> record.store.energy_consumption }
             ]
     ) {
         metricTransformers.each{ String name, Closure transformer ->

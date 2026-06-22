@@ -2,6 +2,7 @@
 ## Bug Fixes:
 - Session tracking now applicable to other than local settings
 - Session memory value now accumulation of head job and workflow
+- Added names to workflow and other named levels in the provenance output
 
 ## Misc:
 

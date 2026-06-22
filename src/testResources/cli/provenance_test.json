@@ -12,6 +12,13 @@
             "readable": "COMPLETED"
         }
     },
+    "name": {
+        "@type": "schema:PropertyValue",
+        "value": "NFCORE_RNASEQ:RNASEQ:FASTQ_QC_TRIM_FILTER_SETSTRANDEDNESS:FQ_LINT",
+        "additionalProperty": {
+            "readable": "NFCORE_RNASEQ:RNASEQ:FASTQ_QC_TRIM_FILTER_SETSTRANDEDNESS:FQ_LINT"
+        }
+    },
     "energy_consumption": {
         "@type": "schema:QuantitativeValue",
         "value": 0.006560675227609531776000,
@@ -101,6 +108,13 @@
                 "value": "COMPLETED",
                 "additionalProperty": {
                     "readable": "COMPLETED"
+                }
+            },
+            "name": {
+                "@type": "schema:PropertyValue",
+                "value": "NFCORE_RNASEQ:RNASEQ:FASTQ_QC_TRIM_FILTER_SETSTRANDEDNESS:FQ_LINT",
+                "additionalProperty": {
+                    "readable": "NFCORE_RNASEQ:RNASEQ:FASTQ_QC_TRIM_FILTER_SETSTRANDEDNESS:FQ_LINT"
                 }
             },
             "energy_consumption": {
