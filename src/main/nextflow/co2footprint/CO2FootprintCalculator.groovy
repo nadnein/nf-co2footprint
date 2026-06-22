@@ -240,17 +240,27 @@ class CO2FootprintCalculator {
     }
 
     /**
-     * Utility method to use the trace value from a previous run if:
-     * 1. We are in a post-run setting
-     * 2. The entry was not explicitly set in the config
-     * 3. The entry is in the `TraceRecord`
+     * Resolves a calculation parameter by choosing between the current config and a value
+     * stored in a previous run's trace output.
      *
-     * @param config The CO2FootprintConfig object containing the configuration for the current run
-     * @param configKeys The entry keys in the config that trigger the value to be set explicitly
-     * @param configValue The current config value
-     * @param trace TraceRecord or CO2Record, potentially with values from previous runs
-     * @param traceKey The entry key in the trace
-     * @return The value from the trace if the config entry was not explicitly set and the trace contains the value, otherwise the current config value
+     * In post-run mode, the input trace may be a CO2Record from a prior plugin run that already
+     * contains the parameter values used in the original calculation (e.g. PUE, carbon intensity).
+     * This method preserves those original values — unless the user explicitly overrides them
+     * in the current config.
+     *
+     * In normal (integrated) mode, always returns the current config value.
+     *
+     * Example: a prior run used PUE=1.4, stored in the trace. If the user re-runs post-run
+     * estimation without setting 'pue' in config, this returns 1.4 from the trace. If the user
+     * explicitly sets pue=1.2 in config, this returns 1.2.
+     *
+     * @param config      Plugin configuration for the current run
+     * @param configKeys  Config keys that, if explicitly set by the user, force using the config value
+     * @param configValue The value from the current config (used when not in post-run, or when overridden)
+     * @param trace       The input trace record, potentially containing values from a previous run
+     * @param traceKey    The field name in the trace to look up the previous value
+     * @param isPostRun   Whether we are in post-run mode
+     * @return The previous run's value if in post-run mode and not overridden, otherwise the config value
      */
     static <T> T useConfiguredOrPrevious(
             CO2FootprintConfig config, List<String> configKeys, T configValue,
