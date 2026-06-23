@@ -77,7 +77,7 @@ class CO2FootprintPlugin extends BasePlugin implements PluginAbstractExec {
             // Define head job stats
             CO2RecordTree headJobStats = new CO2RecordTree(
                     headJobCO2Record.store.get('name', 'Nextflow head job'),
-                    [level: 'head'],
+                    [workflowLevel: 'head'],
                     headJobCO2Record
             )
             
@@ -87,7 +87,7 @@ class CO2FootprintPlugin extends BasePlugin implements PluginAbstractExec {
             
             CO2RecordTree sessionStats = new CO2RecordTree(
                     sessionName,
-                    [level: 'session'],
+                    [workflowLevel: 'session'],
                     null,
                     null,
                     [headJobStats, observer.workflowStats]

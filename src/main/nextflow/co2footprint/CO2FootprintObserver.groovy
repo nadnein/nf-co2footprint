@@ -70,7 +70,7 @@ class CO2FootprintObserver implements TraceObserverV2 {
 
         // Create a CO2RecordTree root node for the run, tagged with 'workflow' level,
         // to collect and organize execution metrics hierarchically.
-        this.workflowStats = new CO2RecordTree('Unknown workflow', [level: 'workflow'])
+        this.workflowStats = new CO2RecordTree('Unknown workflow', [workflowLevel: 'workflow'])
 
         // Make file instances
         this.traceFile = new TraceFileCreator(config.trace)
@@ -137,11 +137,11 @@ class CO2FootprintObserver implements TraceObserverV2 {
         // Add a process node under the workflow if it doesn’t exist yet
         CO2RecordTree processNode = workflowStats.getChild(traceRecord.processName)
         if(!processNode) {
-            processNode = workflowStats.addChild(new CO2RecordTree(traceRecord.processName, [level: 'process']))
+            processNode = workflowStats.addChild(new CO2RecordTree(traceRecord.processName, [workflowLevel: 'process']))
         }
 
         // Add a task node with its CO2Record to the corresponding process
-        processNode.addChild(new CO2RecordTree(traceRecord.taskId, [level: 'task'], co2Record))
+        processNode.addChild(new CO2RecordTree(traceRecord.taskId, [workflowLevel: 'task'], co2Record))
 
         return co2Record
     }

@@ -17,7 +17,7 @@ class CO2RecordTree {
      * Each node represents one element in the workflow hierarchy (e.g. workflow, process, or task).
      *
      * @param name       identifier of the node (e.g. run name, process name, or task ID)
-     * @param metaData   metadata of the node (e.g. level: 'workflow' | 'process' | 'task')
+     * @param metaData   metadata of the node (e.g. workflowLevel: 'workflow' | 'process' | 'task' | 'head')
      * @param co2Record      optional CO2Record containing the metrics for this node
      * @param parent     parent node in the hierarchy (null for the root)
      * @param children   list of child nodes (empty list by default)
@@ -163,7 +163,7 @@ class CO2RecordTree {
         valueKeys ?= collectKeys().toList()
 
         // Start value collection at specified level
-        if (metaData?.level === level) {
+        if (metaData?.workflowLevel === level) {
             Map<String, Object> values = [:]
             valueKeys.forEach { String valueKey ->
                 List<Object> vals = collectValues(valueKey)
@@ -189,7 +189,7 @@ class CO2RecordTree {
      * @return A list of record trees at the specified level.
      */
     List<CO2RecordTree> descentTo(String level) {
-        if (metaData?.level === level) {
+        if (metaData?.workflowLevel == level) {
             return [this]
         }
         else {
