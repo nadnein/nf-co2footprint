@@ -32,6 +32,10 @@ To customize the plugin settings to your computing environment and preferences, 
         file = "${params.outdir}/pipeline_info/co2footprint_report_${params.trace_report_suffix}.html"
       }
     
+      provenance {
+        file = "${params.outdir}/pipeline_info/co2footprint_provenance_${params.trace_report_suffix}.json"
+      }
+    
       location = 'DE'                             // replace with your zone code
       emApiKey = secrets.EM_API_KEY               // set your API key as Nextflow secret with the name 'EM_API_KEY'
       pue = 1.3                                   // replace with PUE of your data center
@@ -135,6 +139,10 @@ For more information, see [Parameters](parameters.md).
     
       report {
         file = "${params.outdir}/pipeline_info/co2footprint_report_${params.trace_report_suffix}.html"
+      }
+    
+      provenance {
+        file = "${params.outdir}/pipeline_info/co2footprint_provenance_${params.trace_report_suffix}.json"
       }
     
       location            = 'DE'
