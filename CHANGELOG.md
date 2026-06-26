@@ -1,5 +1,6 @@
 # New
 ## Bug Fixes:
+- Plugin now supports empty runs with no tasks
 
 ## Misc:
 

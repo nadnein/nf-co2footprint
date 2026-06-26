@@ -93,14 +93,23 @@ class CO2RecordTree {
                     energy_consumption_market: { CO2Record record -> record.store.energy_consumption },
             ]
     ) {
-        metricTransformers.each{ String name, Closure transformer ->
-            List<Object> childMetrics = children.collect{ CO2RecordTree child ->
+        metricTransformers.each { String name, Closure transformer ->
+            List<Object> childMetrics = []
+            children.each { CO2RecordTree child ->
                 child.collectAdditionalMetrics(metricTransformers)
-                child.co2Record.additionalMetrics.get(name)
+                
+                Object value = child.co2Record?.additionalMetrics?.get(name)
+                if (value != null) {
+                    childMetrics.add(value)
+                }
             }
-            childMetrics.removeAll([null])
-            Object attribute = childMetrics ? childMetrics.sum() : transformer(co2Record)
-            co2Record.additionalMetrics.put(name , attribute)
+
+            // Fill with either sum of children or calculate from scratch if children don't contain this metric
+            if (co2Record) {
+                Object attribute = childMetrics ? childMetrics.sum() : transformer(co2Record)
+                co2Record.additionalMetrics.put(name, attribute)
+                return
+            }
         }
         return this
     }

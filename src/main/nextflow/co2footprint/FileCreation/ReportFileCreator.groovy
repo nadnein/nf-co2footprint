@@ -13,6 +13,7 @@ import nextflow.co2footprint.Records.CO2EquivalencesRecord
 import nextflow.co2footprint.Records.CO2Record
 import nextflow.co2footprint.Records.CO2RecordTree
 import nextflow.co2footprint.Records.CiRecordCollector
+import nextflow.co2footprint.Logging.Markers
 import nextflow.script.WorkflowMetadata
 import nextflow.trace.TraceHelper
 
@@ -181,12 +182,12 @@ class ReportFileCreator extends BaseFileCreator{
     private Map<String, String> makeCO2Total(suffix) {
         // Get workflow level stats
         CO2Record workflowRecord = stats.descentTo('workflow').collect(
-                {CO2RecordTree workflowTree -> workflowTree.co2Record}
+                { CO2RecordTree workflowTree -> workflowTree.co2Record }
         ).sum() as CO2Record
 
         // Retrieve total CO₂ emissions and energy consumption for the given suffix
-        BigDecimal co2e = workflowRecord.get("CO2e${suffix}") as Double
-        BigDecimal energy = workflowRecord.get("energy_consumption${suffix}") as Double
+        BigDecimal co2e = workflowRecord?.get("CO2e${suffix}") as Double
+        BigDecimal energy = workflowRecord?.get("energy_consumption${suffix}") as Double
 
         if (co2e != null) {
             CO2EquivalencesRecord equivalences = co2FootprintComputer.computeCO2footprintEquivalences(co2e)
