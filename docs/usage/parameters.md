@@ -9,7 +9,7 @@ The following parameters are currently available:
 
 - **`trace`**  
   Map containing:
-    - `enabled`: Whether to produce this file`
+    - `enabled`: Whether to produce this file
     - `file`: Name of the `.txt` carbon footprint report containing the energy consumption, estimated CO₂ emission, and other relevant metrics for each task.
     - `overwrite`: whether to overwrite the file, if it already exists.
 
