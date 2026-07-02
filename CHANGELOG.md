@@ -3,6 +3,8 @@
 
 ## Misc:
 - Made summary file disabled on default with option to enable
+- Updated dependencies and removed unnecessary ones
+- Added Nextflow versioning information of the plugin to docs
 
 ## Features:
 - Added more calculation metrics to provenance and trace file to enhance reproducibility

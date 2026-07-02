@@ -68,7 +68,7 @@ class FileChecker {
 
         buildChecksDirectory = projectRoot.resolve('build/resources/test').resolve(relativeChecksPath)
         failPath = buildChecksDirectory.resolve('failed')
-        failPath.createDirIfNotExists()
+        failPath.mkdirs()
     }
 
     /**
@@ -158,7 +158,7 @@ class FileChecker {
         List<String> lines  = path.readLines()
         String line
         List<Integer> visitedPositions = []
-        if (lineRecords instanceof Map<Integer, String> ) {
+        if (lineRecords in Map<Integer, String> ) {
             lineRecords.each { Integer linePos, String lineRecord ->
                 visitedPositions.add(linePos)
                 // Change from 1 to 0-based
@@ -171,7 +171,7 @@ class FileChecker {
                 }
             }
         }
-        else if (lineRecords instanceof List<String>){
+        else if (lineRecords in List<String>){
             lineRecords.eachWithIndex{ String lineRecord, int i ->
                 visitedPositions.add(i + 1)
                 try {
