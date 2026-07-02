@@ -11,16 +11,18 @@ The nf-co2footprint plugin creates three output files:
   The trace file includes calculations for each task, similar to the Nextflow trace file. Within this file you can find resource usage details of specific tasks and also the hardware information of your CPU.
 
 - **`summary`** ([sample](../assets/co2footprint_summary_sample.txt))  
-  The summary file includes the total CO₂ footprint of the workflow run and the configuration used for the plugin.
+  The summary file includes the total CO₂ footprint of the workflow run and the configuration used for the plugin. It is disabled if `enabled = true` is not set in the config.
   
 - **`report`** ([sample](../assets/co2footprint_report_sample.html))  
   The HTML report contains information about the carbon footprint of the whole pipeline run as well as plots showing the distributions of the CO₂ emissions for the different processes. The CO₂ emissions are separated into newly generated (i.e. from non-cached tasks) and total (including cached tasks). Additionally, it contains a table with the metrics for all individual tasks. The table is limited to 10000 entries by default. It finishes up with an overview plot of the carbon intensities during the workflow execution.
 
-- **`provenance`**
+- **`provenance`** ([sample](../assets/co2footprint_provenance_sample.json))
   The provenance file contains all trace information contributing to the emission calculation in a tree structure with the levels in descending order `session -> head job & workflow -> process -> task`. Example: A workflow consists of multiple processes / has multiple `process` level children.
   The file design adheres to the javascript object notation linked-data (JSON-LD) format with type context definitions from schema.org and bioschemas.org.
   The head job emission estimation includes all processes except tasks from the point of plugin start to stop in a similar manner to how Nextflow defines a `TraceRecord`, but through the Java-native OSHI library.
   The workflow and head values are both accumulated to an overarching `session` value.
+  *Example:* A workflow consists of multiple processes / has multiple `process` level children, which are listed under `isPart`.  
+  <br>
   **Accumulation of provenance values:**
     - The total session emission estimation includes everything from the point of plugin start to stop in a similar manner to how Nextflow defines a `TraceRecord`, but through the Java-native OSHI library.  
     - The value accumulation from `tasks` over `process` to `workflow` level happens differently for different values:

@@ -39,12 +39,12 @@ To customize the plugin settings to your computing environment and preferences, 
         file = "${params.outdir}/pipeline_info/co2footprint_trace_${params.trace_report_suffix}.txt"
       }
     
-      summary {
-        file = "${params.outdir}/pipeline_info/co2footprint_summary_${params.trace_report_suffix}.txt"
-      }
-    
       report {
         file = "${params.outdir}/pipeline_info/co2footprint_report_${params.trace_report_suffix}.html"
+      }
+    
+      provenance {
+        file = "${params.outdir}/pipeline_info/co2footprint_provenance_${params.trace_report_suffix}.json"
       }
     
       location = 'DE'                             // replace with your zone code
@@ -148,12 +148,12 @@ For more information, see [Parameters](parameters.md).
         file = "${params.outdir}/pipeline_info/co2footprint_trace_${params.trace_report_suffix}.txt"
       }
     
-      summary {
-        file = "${params.outdir}/pipeline_info/co2footprint_summary_${params.trace_report_suffix}.txt"
-      }
-    
       report {
         file = "${params.outdir}/pipeline_info/co2footprint_report_${params.trace_report_suffix}.html"
+      }
+    
+      provenance {
+        file = "${params.outdir}/pipeline_info/co2footprint_provenance_${params.trace_report_suffix}.json"
       }
     
       location            = 'DE'

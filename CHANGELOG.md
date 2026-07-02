@@ -5,6 +5,7 @@
 - Added names to workflow and other named levels in the provenance output
 
 ## Misc:
+- Made summary file disabled on default with option to enable
 - Updated dependencies and removed unnecessary ones
 - Added Nextflow versioning information of the plugin to docs
 

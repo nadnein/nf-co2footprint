@@ -79,7 +79,7 @@ class CO2FootprintObserver implements TraceObserverV2 {
         this.provenanceFile = new ProvenanceFileCreator(config.provenance)
 
         if (!config.trace.enabled && !config.summary.enabled && !config.report.enabled && !config.provenance.enabled) {
-            log.warn('No output files are enabled - to enable, set `enabled: true` in the sections `trace`, `summary` or `report`.')
+            log.warn('No output files are enabled - to enable, set `enabled: true` in the sections `trace`, `summary`, `report` or `provenance`.')
         }
 
         this.co2FootprintCalculator = co2FootprintCalculator
@@ -199,8 +199,8 @@ class CO2FootprintObserver implements TraceObserverV2 {
         this.workflowStats.name = session.runName
 
         // we wouldn't expect a config where all output files are turned off, so warn the user
-        if (!traceFile && !summaryFile && !reportFile) {
-            log.warn('No output files are enabled - to enable, set `enabled: true` in the sections `trace`, `summary` or `report`.')
+        if (!traceFile && !summaryFile && !reportFile && !provenanceFile) {
+            log.warn('No output files are enabled - to enable, set `enabled: true` in the sections `trace`, `summary`, `report` or `provenance`.')
         }
 
         // Start hourly CI updating
