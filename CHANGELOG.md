@@ -1,5 +1,8 @@
 # New
 ## Bug Fixes:
+- Session tracking now applicable to other than local settings
+- Session memory value now accumulation of head job and workflow
+- Added names to workflow and other named levels in the provenance output
 
 ## Misc:
 - Made summary file disabled on default with option to enable
@@ -8,6 +11,7 @@
 
 ## Features:
 - Added more calculation metrics to provenance and trace file to enhance reproducibility
+- Added exclusive head job resource tracking
 
 # 1.3.0
 ## Bug Fixes:
