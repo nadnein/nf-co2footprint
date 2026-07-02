@@ -108,7 +108,7 @@ class CO2RecordTreeTest extends Specification {
         String yamlLines = yaml.dump(parentMap)
         Path outPath = Path.of(this.class.getResource('.').toURI()).complete().resolve('tree').resolve('out')
         outPath.createParentDirectories()
-        outPath.createDirIfNotExists()
+        outPath.mkdirs()
         Path treePath = outPath.resolve('test_tree.yaml')
         treePath.write(yamlLines)
 
