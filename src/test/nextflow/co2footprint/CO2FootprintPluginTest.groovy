@@ -193,7 +193,7 @@ class CO2FootprintPluginTest extends Specification{
         observers.size() == 1
         filesExist(tracePath, summaryPath, reportPath, provenancePath) == [false, false, false, false]
         logChecker.checkLogs(null, [
-            'No output files are enabled - to enable, set `enabled: true` in the sections `trace`, `summary` or `report`.'
+            'No output files are enabled - to enable, set `enabled: true` in the sections `trace`, `summary`, `report` or `provenance`.'
         ])
     }
 }

@@ -19,6 +19,13 @@
             "readable": "COMPLETED"
         }
     },
+    "name": {
+        "@type": "schema:PropertyValue",
+        "value": "111",
+        "additionalProperty": {
+            "readable": "111"
+        }
+    },
     "energy_consumption": {
         "@type": "schema:QuantitativeValue",
         "value": 14.01750,
@@ -140,6 +147,13 @@
                     "readable": "COMPLETED"
                 }
             },
+            "name": {
+                "@type": "schema:PropertyValue",
+                "value": "111",
+                "additionalProperty": {
+                    "readable": "111"
+                }
+            },
             "energy_consumption": {
                 "@type": "schema:QuantitativeValue",
                 "value": 14.01750,
@@ -259,6 +273,13 @@
                         "value": "COMPLETED",
                         "additionalProperty": {
                             "readable": "COMPLETED"
+                        }
+                    },
+                    "name": {
+                        "@type": "schema:PropertyValue",
+                        "value": "111",
+                        "additionalProperty": {
+                            "readable": "111"
                         }
                     },
                     "energy_consumption": {
