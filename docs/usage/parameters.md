@@ -34,7 +34,7 @@ The following parameters are currently available:
 
 - **`provenance`**  
   Map containing:
-    - `enabled`: Whether to produce this file, defaults to `true`
+    - `enabled`: Whether to produce this file
     - `file`: Name of the data/machine-actionable file containing all metrics that were used during footprint calculation in a structured way.
     - `overwrite`: Whether to overwrite the file, if it already exists.
     - `emissionMetricsOnly`: Whether to only include emission metrics, such as CO₂ equivalents and electricity consumption.
