@@ -25,7 +25,7 @@ The following parameters are currently available:
 
 - **`report`**  
   Map containing:
-    - `enabled`: Whether to produce this file, defaults to `true`
+    - `enabled`: Whether to produce this file
     - `file`: Name of the HTML report containing information about the entire carbon footprint, overview plots, and more detailed task-specific metrics.
     - `overwrite`: Whether to overwrite the file, if it already exists.
     - `maxTasks`: Maximum number of tasks which are included into the report.
