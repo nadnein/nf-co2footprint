@@ -115,6 +115,48 @@ const HOVERLABEL = {
  */
 const PLOT_BG = { plot_bgcolor: '#FCFEFF', paper_bgcolor: '#FFFFFF' }
 
+/**
+ * Utility functions for data extraction and validation used throughout the report.
+ */
+window.nfReportHelpers = {
+  /**
+   * Extracts a numeric value from a potentially nested report object.
+   * Handles: {raw: {value: num}}, {value: num}, or bare number.
+   * @param {*} obj - The object to extract from
+   * @returns {number|null} The raw numeric value, or null if not found
+   */
+  findValue: function(obj) {
+    if (obj == null) return null
+    if (typeof obj === 'number') return obj
+    if (typeof obj === 'object') return obj.raw?.value ?? obj.value ?? null
+    return null
+  },
+
+  /**
+   * Extracts the first numeric value from a summary array (e.g. window.data.summary[key][0]).
+   * Falls through: nested .raw.value → .value → bare number.
+   * @param {*} arr - The summary array (can be undefined/null/non-array)
+   * @returns {number|null} The first extracted value, or null
+   */
+  findArrayValue: function(arr) {
+    if (!Array.isArray(arr) || arr.length === 0) return null
+    return window.nfReportHelpers.findValue(arr[0])
+  },
+
+  /**
+   * Extracts a process-level field from the data summary by key.
+   * @param {object} summary - The data.summary object
+   * @param {string} key - The field name (e.g. 'peak_rss', 'memory')
+   * @returns {number|null}
+   */
+  findByProcessKey: function(summary, key) {
+    var val = summary[key]
+    if (Array.isArray(val) && val.length > 0) return window.nfReportHelpers.findValue(val[0])
+    if (val != null) return val?.raw?.value ?? val
+    return null
+  }
+}
+
 // Map for collecting statistics by process (legacy, kept for compatibility)
 window.statsByProcess = {};
 
@@ -947,7 +989,7 @@ $(function () {
   // Panning or zooming either plot mirrors the new x-range onto the other so
   // both always show the same time window.
   // ───────────────────────────────────────────────────────────────────────────
-  function link_timeline_xaxis(ciGraphDiv, swimlaneGraphDiv) {
+  function link_timeline_xaxis(ciGraphDiv, swimlaneGraphDiv, optimizationGraphDiv) {
     if (!ciGraphDiv || !swimlaneGraphDiv) {
       return
     }
@@ -958,15 +1000,28 @@ $(function () {
     }
     ciGraphDiv._nfTimelineSyncAttached = true
     swimlaneGraphDiv._nfTimelineSyncAttached = true
+    if (optimizationGraphDiv) {
+      optimizationGraphDiv._nfTimelineSyncAttached = true
+    }
 
-    // syncInProgress prevents the two plots from triggering each other in an
-    // infinite loop when one relayout causes a relayout in the other.
+    // syncInProgress prevents the plots from triggering each other in an
+    // infinite loop when one relayout causes a relayout in another.
     let syncInProgress = false
 
-    // Bootstrap the swimlane to match the CI plot's initial x-axis range.
+    // Build the list of all target plots to sync x-axis with.
+    var otherTargets = [swimlaneGraphDiv]
+    if (optimizationGraphDiv) {
+      otherTargets.push(optimizationGraphDiv)
+    }
+
+    // Bootstrap swimlane and optimization plot to match the CI plot's initial range.
     const initialRange = ciGraphDiv.layout?.xaxis?.range
     if (Array.isArray(initialRange) && initialRange.length === 2) {
-      Plotly.relayout(swimlaneGraphDiv, { 'xaxis.range': initialRange })
+      for (const target of otherTargets) {
+        if (target) {
+          Plotly.relayout(target, { 'xaxis.range': initialRange })
+        }
+      }
     }
 
     /**
@@ -1009,36 +1064,217 @@ $(function () {
       }
     }
 
-    ciGraphDiv.on('plotly_relayout', (eventData) => {
-      mirrorRelayout(swimlaneGraphDiv, eventData)
-    })
-    ciGraphDiv.on('plotly_doubleclick', () => {
-      if (!syncInProgress) {
-        syncInProgress = true
-        Plotly.relayout(swimlaneGraphDiv, { 'xaxis.autorange': true })
-          .then(() => { syncInProgress = false })
-          .catch(() => { syncInProgress = false })
+    // Each plot in the sync group triggers relayout on all other plots
+    var allPlots = [ciGraphDiv, swimlaneGraphDiv]
+    if (optimizationGraphDiv) {
+      allPlots.push(optimizationGraphDiv)
+    }
+
+    for (var pi = 0; pi < allPlots.length; pi++) {
+      (function(plotDiv) {
+        var others = allPlots.slice(0, pi).concat(allPlots.slice(pi + 1))
+        plotDiv.on('plotly_relayout', function(eventData) {
+          for (var oi = 0; oi < others.length; oi++) {
+            mirrorRelayout(others[oi], eventData)
+          }
+        })
+        plotDiv.on('plotly_doubleclick', function() {
+          if (!syncInProgress) {
+            syncInProgress = true
+            for (var oi = 0; oi < others.length; oi++) {
+              Plotly.relayout(others[oi], { 'xaxis.autorange': true })
+                .then(function() { syncInProgress = false })
+                .catch(function() { syncInProgress = false })
+            }
+          }
+        })
+      })(allPlots[pi])
+    }
+  }
+
+  /**
+   * Renders the memory optimization scatter plot.
+   * Two traces per task:
+   *   1. raw_energy_memory (actual, from memory configured per process)
+   *   2. hypothetical energy (if memory were set to the process peak_rss instead)
+   *   Both plotted against task start time; y-axis is energy in Wh.
+   */
+  function make_memory_optimization_plot() {
+    if (!window.data.trace || window.data.trace.length === 0) {
+      return null
+    }
+
+    var traces = []
+    var timelineStart = null
+    var timelineEnd = null
+    var powerdrawMem = null
+
+    // Gather time boundaries and the global powerdraw_memory constant
+    for (var i = 0; i < window.data.trace.length; i++) {
+      var task = window.data.trace[i]
+      var start = new Date(task.start?.raw?.value)
+      var complete = new Date(task.complete?.raw?.value)
+      if (Number.isNaN(start.getTime()) || Number.isNaN(complete.getTime())) {
+        continue
       }
+      if (timelineStart == null || start < timelineStart) timelineStart = start
+      if (timelineEnd == null || complete > timelineEnd) timelineEnd = complete
+
+      // Extract powerdraw_memory (same for all tasks)
+      if (powerdrawMem == null) {
+        powerdrawMem = window.nfReportHelpers.findValue(task.powerdraw_memory)
+      }
+    }
+
+    for (const task of window.data.trace) {
+      var start = new Date(task.start?.raw?.value)
+      if (Number.isNaN(start.getTime())) continue
+
+      var rawEnergyMemory = window.nfReportHelpers.findValue(task.raw_energy_memory)
+      var processKey = normalizeTaskField(task.process) || 'unknown'
+      var processSummary = window.data.summary[processKey]
+      var processPeakRss = processSummary ? window.nfReportHelpers.findByProcessKey(processSummary, 'peak_rss') : null
+      var processMemory = processSummary ? window.nfReportHelpers.findByProcessKey(processSummary, 'memory') : null
+
+      // Determine max memory in GB: prefer peak_rss (bytes), fallback to memory (GB)
+      var memInGB = (processPeakRss != null && processPeakRss > 0)
+        ? processPeakRss / 1e9
+        : (processMemory != null && processMemory > 0) ? processMemory : null
+
+      var hypotheticalEnergy = null
+      if (memInGB != null && powerdrawMem != null) {
+        var runtimeH = ((task.complete?.raw?.value || 0) - (task.start?.raw?.value || 0)) / 3_600_000
+        hypotheticalEnergy = powerdrawMem * memInGB * runtimeH * 0.001
+      }
+
+      var taskId = normalizeTaskField(task.task_id) || 'n/a'
+      var procName = processKey
+
+      // Trace 1: raw_energy_memory
+      if (rawEnergyMemory != null && rawEnergyMemory > 0) {
+        if (!traces[0]) {
+          traces[0] = {
+            name: 'raw_energy_memory',
+            x: [], y: [],
+            task_id: [], process: [],
+          }
+        }
+        traces[0].x.push(start)
+        traces[0].y.push(rawEnergyMemory)
+        traces[0].task_id.push(taskId)
+        traces[0].process.push(procName)
+      }
+
+      // Trace 2: hypothetical energy
+      if (hypotheticalEnergy != null && hypotheticalEnergy > 0) {
+        if (!traces[1]) {
+          traces[1] = {
+            name: 'hypothetical energy',
+            x: [], y: [],
+            task_id: [], process: [],
+          }
+        }
+        traces[1].x.push(start)
+        traces[1].y.push(hypotheticalEnergy)
+        traces[1].task_id.push(taskId)
+        traces[1].process.push(procName)
+      }
+    }
+
+    traces = traces.filter(function(t) { return t != null })
+    if (traces.length === 0) return null
+
+    // Apply shared trace defaults
+    traces.forEach(function(tr, i) {
+      var colors = ['#0D6A8A', '#E76F51']
+      var symbols = ['circle', 'triangle-up']
+      var labels = ['raw_energy_memory', 'hypothetical energy']
+      tr.type = 'scatter'
+      tr.mode = 'markers'
+      tr.marker = { size: 7, color: colors[i], symbol: symbols[i] }
+      tr.hovertemplate = '<b>' + labels[i] + '</b><br>Task: %{task_id}<br>Process: %{process}<br>Energy: %{y:.2f} Wh<extra></extra>'
     })
 
-    swimlaneGraphDiv.on('plotly_relayout', (eventData) => {
-      mirrorRelayout(ciGraphDiv, eventData)
-    })
-    swimlaneGraphDiv.on('plotly_doubleclick', () => {
-      if (!syncInProgress) {
-        syncInProgress = true
-        Plotly.relayout(ciGraphDiv, { 'xaxis.autorange': true })
-          .then(() => { syncInProgress = false })
-          .catch(() => { syncInProgress = false })
+    var layout = {
+      title: { text: 'Memory optimization' },
+      margin: { l: 100, r: 40, t: 50, b: 60 },
+      height: 320,
+      ...PLOT_BG,
+      xaxis: {
+        title: { text: 'Time' },
+        type: 'date',
+        range: timelineStart && timelineEnd ? [timelineStart, timelineEnd] : undefined,
+        showgrid: true,
+        gridcolor: 'rgba(36,64,87,0.08)',
+        zeroline: false,
+        showline: false,
+        hoverformat: '%Y-%m-%d %H:%M',
+      },
+      yaxis: {
+        title: { text: 'Energy (Wh)' },
+        rangemode: 'tozero',
+      },
+      showlegend: true,
+      hovermode: 'closest',
+      hoverlabel: HOVERLABEL,
+    }
+
+    return Plotly.newPlot('memory-optimization-plot', traces, layout, { responsive: true })
+  }
+
+  /**
+   * Generates a Nextflow config recommendation block based on process memory usage.
+   * For each process, recommends memory = process_peak_rss * 1.2 (20% headroom),
+   * formatted as `memory = X.GB`. Deduplicates by process key.
+   */
+  function generateMemoryConfig() {
+    var configLines = ['process {']
+    var seen = {}
+
+    for (var processKey in window.data.summary) {
+      var processSummary = window.data.summary[processKey]
+
+      // Prefer peak_rss (bytes -> GB), fallback to memory (GB)
+      var peakRss = window.nfReportHelpers.findByProcessKey(processSummary, 'peak_rss')
+      var memory = window.nfReportHelpers.findByProcessKey(processSummary, 'memory')
+      var memInGB = (peakRss != null && peakRss > 0) ? peakRss / 1e9 :
+                     (memory != null && memory > 0) ? memory : null
+
+      if (memInGB != null && memInGB > 0 && !seen[processKey]) {
+        seen[processKey] = true
+        var recommended = Math.ceil(memInGB * 1.2)
+        configLines.push("    withName: '" + processKey + "' {")
+        configLines.push("        memory = " + recommended + ".GB")
+        configLines.push("    }")
       }
-    })
+    }
+
+    configLines.push('}')
+    var configElement = document.getElementById('memory-optimization-config')
+    if (configElement) {
+      configElement.textContent = configLines.join('\n')
+    }
   }
 
   // Executor for ci plot generation
   Promise.all([
     Promise.resolve(make_ci_plot()),
     Promise.resolve(make_process_swimlane_plot()),
-  ]).then(([ciGraphDiv, swimlaneGraphDiv]) => {
-    link_timeline_xaxis(ciGraphDiv, swimlaneGraphDiv)
+  ]).then(function(results) {
+    var ciGraphDiv = results[0]
+    var swimlaneGraphDiv = results[1]
+
+    var optimizationPlotPromise = Promise.resolve(make_memory_optimization_plot())
+    var optimizationDivPromise = new Promise(function(resolve) {
+      generateMemoryConfig()
+      resolve(null)
+    })
+
+    return Promise.all([ciGraphDiv, swimlaneGraphDiv, optimizationPlotPromise, optimizationDivPromise])
+  }).then(function(results) {
+    var ciGraphDiv = results[0]
+    var swimlaneGraphDiv = results[1]
+    var optimizationGraphDiv = results[2]
+    link_timeline_xaxis(ciGraphDiv, swimlaneGraphDiv, optimizationGraphDiv)
   })
 })

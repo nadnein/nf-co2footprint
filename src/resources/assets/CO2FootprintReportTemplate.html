@@ -58,6 +58,7 @@ ${ assets_js.join("\n\n\n\n").replaceAll("(?m)^", '    ') }
         <li class="nav-item"><a class="nav-link" href="#metrics">Metrics</a></li>
         <li class="nav-item"><a class="nav-link" href="#tasks">Tasks</a></li>
         <li class="nav-item"><a class="nav-link" href="#options">Options</a></li>
+        <li class="nav-item"><a class="nav-link" href="#optimization">Optimization</a></li>
         <li class="nav-item"><a class="nav-link" href="#attribution-and-references">Attribution</a></li>
       </ul>
     </div>
@@ -282,6 +283,21 @@ ${ assets_js.join("\n\n\n\n").replaceAll("(?m)^", '    ') }
       <div id="process-swimlane-plot"></div>
       <div id="ci-plot"></div>
       <p class="mt-3 mb-3">The upper panel shows each task's execution window grouped by process. The lower panel shows the carbon intensity (CI) and energy consumption over the same timeline. Both panels are linked — zoom or pan one to update the other.</p>
+    </div>
+
+    <!-- Optimization recommendations -->
+    <div class="container">
+      <h2 id="optimization" class="section">Optimization</h2>
+      <p>The recommendations below are suggestions and may not apply to every case.</p>
+
+      <h3 id="optimization-memory">Memory</h3>
+      <div id="memory-optimization-plot"></div>
+      <p class="mt-3 mb-3">The primary trace (<b>raw_energy_memory</b>) shows the actual memory-attributed energy consumption per task (in Wh). The alternative trace (<b>hypothetical energy</b>) shows what the energy would be if each task used the maximum RSS observed by any task in its process plus and additional 20% to account for variation.</p>
+
+      <details>
+        <summary>Config recommendation</summary>
+        <pre id="memory-optimization-config"></pre>
+      </details>
     </div>
 
     <!-- Tasks table -->
