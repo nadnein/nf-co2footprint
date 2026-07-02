@@ -2,6 +2,7 @@
 ## Bug Fixes:
 
 ## Misc:
+- Removed unnecessary dependencies from MkDocs documentation
 
 ## Features:
 - Added more calculation metrics to provenance and trace file to enhance reproducibility
