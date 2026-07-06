@@ -723,6 +723,48 @@
      */
     const PLOT_BG = { plot_bgcolor: '#FCFEFF', paper_bgcolor: '#FFFFFF' }
     
+    /**
+     * Utility functions for data extraction and validation used throughout the report.
+     */
+    window.nfReportHelpers = {
+      /**
+       * Extracts a numeric value from a potentially nested report object.
+       * Handles: {raw: {value: num}}, {value: num}, or bare number.
+       * @param {*} obj - The object to extract from
+       * @returns {number|null} The raw numeric value, or null if not found
+       */
+      findValue: function(obj) {
+        if (obj == null) return null
+        if (typeof obj === 'number') return obj
+        if (typeof obj === 'object') return obj.raw?.value ?? obj.value ?? null
+        return null
+      },
+    
+      /**
+       * Extracts the first numeric value from a summary array (e.g. window.data.summary[key][0]).
+       * Falls through: nested .raw.value → .value → bare number.
+       * @param {*} arr - The summary array (can be undefined/null/non-array)
+       * @returns {number|null} The first extracted value, or null
+       */
+      findArrayValue: function(arr) {
+        if (!Array.isArray(arr) || arr.length === 0) return null
+        return window.nfReportHelpers.findValue(arr[0])
+      },
+    
+      /**
+       * Extracts a process-level field from the data summary by key.
+       * @param {object} summary - The data.summary object
+       * @param {string} key - The field name (e.g. 'peak_rss', 'memory')
+       * @returns {number|null}
+       */
+      findByProcessKey: function(summary, key) {
+        var val = summary[key]
+        if (Array.isArray(val) && val.length > 0) return window.nfReportHelpers.findValue(val[0])
+        if (val != null) return val?.raw?.value ?? val
+        return null
+      }
+    }
+    
     window.statsByProcess = {};
     
     $(function () {
@@ -1442,7 +1484,7 @@
           })
       }
     
-      function link_timeline_xaxis(ciGraphDiv, swimlaneGraphDiv) {
+      function link_timeline_xaxis(ciGraphDiv, swimlaneGraphDiv, optimizationGraphDiv) {
         if (!ciGraphDiv || !swimlaneGraphDiv) {
           return
         }
@@ -1452,12 +1494,24 @@
         }
         ciGraphDiv._nfTimelineSyncAttached = true
         swimlaneGraphDiv._nfTimelineSyncAttached = true
+        if (optimizationGraphDiv) {
+          optimizationGraphDiv._nfTimelineSyncAttached = true
+        }
     
         let syncInProgress = false
     
+        var otherTargets = [swimlaneGraphDiv]
+        if (optimizationGraphDiv) {
+          otherTargets.push(optimizationGraphDiv)
+        }
+    
         const initialRange = ciGraphDiv.layout?.xaxis?.range
         if (Array.isArray(initialRange) && initialRange.length === 2) {
-          Plotly.relayout(swimlaneGraphDiv, { 'xaxis.range': initialRange })
+          for (const target of otherTargets) {
+            if (target) {
+              Plotly.relayout(target, { 'xaxis.range': initialRange })
+            }
+          }
         }
     
         /**
@@ -1497,41 +1551,214 @@
           }
         }
     
-        ciGraphDiv.on('plotly_relayout', (eventData) => {
-          mirrorRelayout(swimlaneGraphDiv, eventData)
-        })
-        ciGraphDiv.on('plotly_doubleclick', () => {
-          if (!syncInProgress) {
-            syncInProgress = true
-            Plotly.relayout(swimlaneGraphDiv, { 'xaxis.autorange': true })
-              .then(() => { syncInProgress = false })
-              .catch(() => { syncInProgress = false })
+        var allPlots = [ciGraphDiv, swimlaneGraphDiv]
+        if (optimizationGraphDiv) {
+          allPlots.push(optimizationGraphDiv)
+        }
+    
+        for (var pi = 0; pi < allPlots.length; pi++) {
+          (function(plotDiv) {
+            var others = allPlots.slice(0, pi).concat(allPlots.slice(pi + 1))
+            plotDiv.on('plotly_relayout', function(eventData) {
+              for (var oi = 0; oi < others.length; oi++) {
+                mirrorRelayout(others[oi], eventData)
+              }
+            })
+            plotDiv.on('plotly_doubleclick', function() {
+              if (!syncInProgress) {
+                syncInProgress = true
+                for (var oi = 0; oi < others.length; oi++) {
+                  Plotly.relayout(others[oi], { 'xaxis.autorange': true })
+                    .then(function() { syncInProgress = false })
+                    .catch(function() { syncInProgress = false })
+                }
+              }
+            })
+          })(allPlots[pi])
+        }
+      }
+    
+      /**
+       * Renders the memory optimization scatter plot.
+       * Two traces per task:
+       *   1. raw_energy_memory (actual, from memory configured per process)
+       *   2. hypothetical energy (if memory were set to the process peak_rss instead)
+       *   Both plotted against task start time; y-axis is energy in Wh.
+       */
+      function make_memory_optimization_plot() {
+        if (!window.data.trace || window.data.trace.length === 0) {
+          return null
+        }
+    
+        var traces = []
+        var timelineStart = null
+        var timelineEnd = null
+        var powerdrawMem = null
+    
+        for (var i = 0; i < window.data.trace.length; i++) {
+          var task = window.data.trace[i]
+          var start = new Date(task.start?.raw?.value)
+          var complete = new Date(task.complete?.raw?.value)
+          if (Number.isNaN(start.getTime()) || Number.isNaN(complete.getTime())) {
+            continue
           }
+          if (timelineStart == null || start < timelineStart) timelineStart = start
+          if (timelineEnd == null || complete > timelineEnd) timelineEnd = complete
+    
+          if (powerdrawMem == null) {
+            powerdrawMem = window.nfReportHelpers.findValue(task.powerdraw_memory)
+          }
+        }
+    
+        for (const task of window.data.trace) {
+          var start = new Date(task.start?.raw?.value)
+          if (Number.isNaN(start.getTime())) continue
+    
+          var rawEnergyMemory = window.nfReportHelpers.findValue(task.raw_energy_memory)
+          var processKey = normalizeTaskField(task.process) || 'unknown'
+          var processSummary = window.data.summary[processKey]
+          var processPeakRss = processSummary ? window.nfReportHelpers.findByProcessKey(processSummary, 'peak_rss') : null
+          var processMemory = processSummary ? window.nfReportHelpers.findByProcessKey(processSummary, 'memory') : null
+    
+          var memInGB = (processPeakRss != null && processPeakRss > 0)
+            ? processPeakRss / 1e9
+            : (processMemory != null && processMemory > 0) ? processMemory : null
+    
+          var hypotheticalEnergy = null
+          if (memInGB != null && powerdrawMem != null) {
+            var runtimeH = ((task.complete?.raw?.value || 0) - (task.start?.raw?.value || 0)) / 3_600_000
+            hypotheticalEnergy = powerdrawMem * memInGB * runtimeH * 0.001
+          }
+    
+          var taskId = normalizeTaskField(task.task_id) || 'n/a'
+          var procName = processKey
+    
+          if (rawEnergyMemory != null && rawEnergyMemory > 0) {
+            if (!traces[0]) {
+              traces[0] = {
+                name: 'raw_energy_memory',
+                x: [], y: [],
+                task_id: [], process: [],
+              }
+            }
+            traces[0].x.push(start)
+            traces[0].y.push(rawEnergyMemory)
+            traces[0].task_id.push(taskId)
+            traces[0].process.push(procName)
+          }
+    
+          if (hypotheticalEnergy != null && hypotheticalEnergy > 0) {
+            if (!traces[1]) {
+              traces[1] = {
+                name: 'hypothetical energy',
+                x: [], y: [],
+                task_id: [], process: [],
+              }
+            }
+            traces[1].x.push(start)
+            traces[1].y.push(hypotheticalEnergy)
+            traces[1].task_id.push(taskId)
+            traces[1].process.push(procName)
+          }
+        }
+    
+        traces = traces.filter(function(t) { return t != null })
+        if (traces.length === 0) return null
+    
+        traces.forEach(function(tr, i) {
+          var colors = ['#0D6A8A', '#E76F51']
+          var symbols = ['circle', 'triangle-up']
+          var labels = ['raw_energy_memory', 'hypothetical energy']
+          tr.type = 'scatter'
+          tr.mode = 'markers'
+          tr.marker = { size: 7, color: colors[i], symbol: symbols[i] }
+          tr.hovertemplate = '<b>' + labels[i] + '</b><br>Task: %{task_id}<br>Process: %{process}<br>Energy: %{y:.2f} Wh<extra></extra>'
         })
     
-        swimlaneGraphDiv.on('plotly_relayout', (eventData) => {
-          mirrorRelayout(ciGraphDiv, eventData)
-        })
-        swimlaneGraphDiv.on('plotly_doubleclick', () => {
-          if (!syncInProgress) {
-            syncInProgress = true
-            Plotly.relayout(ciGraphDiv, { 'xaxis.autorange': true })
-              .then(() => { syncInProgress = false })
-              .catch(() => { syncInProgress = false })
+        var layout = {
+          title: { text: 'Memory optimization' },
+          margin: { l: 100, r: 40, t: 50, b: 60 },
+          height: 320,
+          ...PLOT_BG,
+          xaxis: {
+            title: { text: 'Time' },
+            type: 'date',
+            range: timelineStart && timelineEnd ? [timelineStart, timelineEnd] : undefined,
+            showgrid: true,
+            gridcolor: 'rgba(36,64,87,0.08)',
+            zeroline: false,
+            showline: false,
+            hoverformat: '%Y-%m-%d %H:%M',
+          },
+          yaxis: {
+            title: { text: 'Energy (Wh)' },
+            rangemode: 'tozero',
+          },
+          showlegend: true,
+          hovermode: 'closest',
+          hoverlabel: HOVERLABEL,
+        }
+    
+        return Plotly.newPlot('memory-optimization-plot', traces, layout, { responsive: true })
+      }
+    
+      /**
+       * Generates a Nextflow config recommendation block based on process memory usage.
+       * For each process, recommends memory = process_peak_rss * 1.2 (20% headroom),
+       * formatted as `memory = X.GB`. Deduplicates by process key.
+       */
+      function generateMemoryConfig() {
+        var configLines = ['process {']
+        var seen = {}
+    
+        for (var processKey in window.data.summary) {
+          var processSummary = window.data.summary[processKey]
+    
+          var peakRss = window.nfReportHelpers.findByProcessKey(processSummary, 'peak_rss')
+          var memory = window.nfReportHelpers.findByProcessKey(processSummary, 'memory')
+          var memInGB = (peakRss != null && peakRss > 0) ? peakRss / 1e9 :
+                         (memory != null && memory > 0) ? memory : null
+    
+          if (memInGB != null && memInGB > 0 && !seen[processKey]) {
+            seen[processKey] = true
+            var recommended = Math.ceil(memInGB * 1.2)
+            configLines.push("    withName: '" + processKey + "' {")
+            configLines.push("        memory = " + recommended + ".GB")
+            configLines.push("    }")
           }
-        })
+        }
+    
+        configLines.push('}')
+        var configElement = document.getElementById('memory-optimization-config')
+        if (configElement) {
+          configElement.textContent = configLines.join('\n')
+        }
       }
     
       Promise.all([
         Promise.resolve(make_ci_plot()),
         Promise.resolve(make_process_swimlane_plot()),
-      ]).then(([ciGraphDiv, swimlaneGraphDiv]) => {
-        link_timeline_xaxis(ciGraphDiv, swimlaneGraphDiv)
+      ]).then(function(results) {
+        var ciGraphDiv = results[0]
+        var swimlaneGraphDiv = results[1]
+    
+        var optimizationPlotPromise = Promise.resolve(make_memory_optimization_plot())
+        var optimizationDivPromise = new Promise(function(resolve) {
+          generateMemoryConfig()
+          resolve(null)
+        })
+    
+        return Promise.all([ciGraphDiv, swimlaneGraphDiv, optimizationPlotPromise, optimizationDivPromise])
+      }).then(function(results) {
+        var ciGraphDiv = results[0]
+        var swimlaneGraphDiv = results[1]
+        var optimizationGraphDiv = results[2]
+        link_timeline_xaxis(ciGraphDiv, swimlaneGraphDiv, optimizationGraphDiv)
       })
     })
 
-    window.data = {"trace":[{"task_id":{"raw":{"value":"111","type":"str"},"readable":"111"},"hash":{"raw":{"value":null,"type":"str"},"readable":"-","report":"<div class=\"script_block short\"><code>-</code></div>"},"native_id":{"raw":{"value":null,"type":"str"},"readable":"-"},"process":{"raw":{"value":"observerTestProcess","type":"str"},"readable":"observerTestProcess"},"module":{"raw":{"value":null,"type":"str"},"readable":"-"},"container":{"raw":{"value":null,"type":"str"},"readable":"-"},"tag":{"raw":{"value":null,"type":"str"},"readable":"-"},"name":{"raw":{"value":"111","type":"str"},"readable":"111"},"status":{"raw":{"value":"COMPLETED","type":"str"},"readable":"COMPLETED","report":"<span class=\"badge badge-success\">COMPLETED</span>"},"exit":{"raw":{"value":null,"type":"str"},"readable":"-"},"submit":{"raw":{"value":null,"type":"DateTime","unit":"ms","description":"Unix time"},"readable":"-"},"start":{"raw":{"value":null,"type":"DateTime","unit":"ms","description":"Unix time"},"readable":"-"},"complete":{"raw":{"value":null,"type":"DateTime","unit":"ms","description":"Unix time"},"readable":"-"},"duration":{"raw":{"value":null,"type":"Duration","unit":"ms"},"readable":"-"},"realtime":{"raw":{"value":3600000.000,"type":"Duration","unit":"ms","scale":""},"readable":"1h","report":"1h"},"%cpu":{"raw":{"value":100.0,"type":"Percentage","unit":"","scale":"%"},"readable":"100 %"},"%mem":{"raw":{"value":null,"type":"Percentage","unit":"%"},"readable":"-"},"rss":{"raw":{"value":null,"type":"Bytes","unit":"B"},"readable":"-"},"vmem":{"raw":{"value":null,"type":"Bytes","unit":"B"},"readable":"-"},"peak_rss":{"raw":{"value":null,"type":"Bytes","unit":"B"},"readable":"-"},"peak_vmem":{"raw":{"value":null,"type":"Bytes","unit":"B"},"readable":"-"},"rchar":{"raw":{"value":null,"type":"Bytes","unit":"B"},"readable":"-"},"wchar":{"raw":{"value":null,"type":"Bytes","unit":"B"},"readable":"-"},"syscr":{"raw":{"value":null,"type":"Number"},"readable":"-"},"syscw":{"raw":{"value":null,"type":"Number"},"readable":"-"},"read_bytes":{"raw":{"value":null,"type":"Bytes","unit":"B"},"readable":"-"},"write_bytes":{"raw":{"value":null,"type":"Bytes","unit":"B"},"readable":"-"},"attempt":{"raw":{"value":null,"type":"Number"},"readable":"-"},"workdir":{"raw":{"value":null,"type":"str"},"readable":"-"},"script":{"raw":{"value":null,"type":"str"},"readable":"-"},"scratch":{"raw":{"value":null,"type":"str"},"readable":"-"},"queue":{"raw":{"value":null,"type":"str"},"readable":"-"},"cpus":{"raw":{"value":1,"type":"Number","unit":"","scale":""},"readable":"1"},"memory":{"raw":{"value":7E+9,"type":"Bytes","unit":"B","scale":""},"readable":"7 GB"},"disk":{"raw":{"value":null,"type":"Bytes","unit":"B"},"readable":"-"},"time":{"raw":{"value":null,"type":"Duration","unit":"ms"},"readable":"-"},"env":{"raw":{"value":null,"type":"str"},"readable":"-"},"error_action":{"raw":{"value":null,"type":"str"},"readable":"-"},"vol_ctxt":{"raw":{"value":null,"type":"Number"},"readable":"-"},"inv_ctxt":{"raw":{"value":null,"type":"Number"},"readable":"-"},"hostname":{"raw":{"value":null,"type":"str"},"readable":"-"},"cpu_model":{"raw":{"value":"Unknown model","type":"str"},"readable":"Unknown model"},"accelerator":{"raw":{"value":null,"type":"Number"},"readable":"-"},"accelerator_type":{"raw":{"value":null,"type":"str"},"readable":"-"},"energy_consumption":{"raw":{"value":14.01750,"type":"Number","unit":"Wh","scale":""},"readable":"14.02 Wh"},"CO2e":{"raw":{"value":6.728400000,"type":"Number","unit":"g","scale":""},"readable":"6.73 g"},"CO2e_market":{"raw":{"value":null,"type":"Number","unit":"g"},"readable":"-"},"carbon_intensity":{"raw":{"value":480.0,"type":"Number","unit":"gCO\u2082e/kWh","scale":""},"readable":"480 gCO\u2082e/kWh"},"powerdraw_cpu":{"raw":{"value":11.41,"type":"Number","unit":"W","scale":""},"readable":"11.41 W"},"raw_energy_processor":{"raw":{"value":11.41,"type":"Number","unit":"Wh","scale":""},"readable":"11.41 Wh"},"raw_energy_memory":{"raw":{"value":2.6075,"type":"Number","unit":"Wh","scale":""},"readable":"2.61 Wh"}}],"summary":{"observerTestProcess":{"CO2e":[6.728400000],"energy_consumption":[0.01401750],"CO2e_non_cached":[6.728400000],"energy_consumption_non_cached":[0.01401750]}}};
-    window.options = [{"option":"ci","value":"480.0"},{"option":"ciMarket","value":null},{"option":"customCpuTdpFile","value":null},{"option":"ignoreCpuModel","value":"false"},{"option":"location","value":null},{"option":"machineType","value":null},{"option":"powerdrawCpuDefault","value":null},{"option":"powerdrawMem","value":"0.3725"},{"option":"provenanceFile","value":"/var/folders/hy/br8lmc9n32ld843gzkx6yfwh0000gp/T/tmpdir1918338962620104546/provenance_test.json"},{"option":"pue","value":"1.0"},{"option":"reportFile","value":"/var/folders/hy/br8lmc9n32ld843gzkx6yfwh0000gp/T/tmpdir1918338962620104546/report_test.html"},{"option":"summaryFile","value":"/var/folders/hy/br8lmc9n32ld843gzkx6yfwh0000gp/T/tmpdir1918338962620104546/summary_test.txt"},{"option":"traceFile","value":"/var/folders/hy/br8lmc9n32ld843gzkx6yfwh0000gp/T/tmpdir1918338962620104546/trace_test.txt"}];
+    window.data = {"trace":[{"task_id":{"raw":{"value":"111","type":"str"},"readable":"111"},"hash":{"raw":{"value":null,"type":"str"},"readable":"-","report":"<div class=\"script_block short\"><code>-</code></div>"},"native_id":{"raw":{"value":null,"type":"str"},"readable":"-"},"process":{"raw":{"value":"observerTestProcess","type":"str"},"readable":"observerTestProcess"},"module":{"raw":{"value":null,"type":"str"},"readable":"-"},"container":{"raw":{"value":null,"type":"str"},"readable":"-"},"tag":{"raw":{"value":null,"type":"str"},"readable":"-"},"name":{"raw":{"value":"111","type":"str"},"readable":"111"},"status":{"raw":{"value":"COMPLETED","type":"str"},"readable":"COMPLETED","report":"<span class=\"badge badge-success\">COMPLETED</span>"},"exit":{"raw":{"value":null,"type":"str"},"readable":"-"},"submit":{"raw":{"value":null,"type":"DateTime","unit":"ms","description":"Unix time"},"readable":"-"},"start":{"raw":{"value":null,"type":"DateTime","unit":"ms","description":"Unix time"},"readable":"-"},"complete":{"raw":{"value":null,"type":"DateTime","unit":"ms","description":"Unix time"},"readable":"-"},"duration":{"raw":{"value":null,"type":"Duration","unit":"ms"},"readable":"-"},"realtime":{"raw":{"value":3600000,"type":"Duration","unit":"ms","scale":""},"readable":"1h","report":"1h"},"%cpu":{"raw":{"value":100.0,"type":"Percentage","unit":"","scale":"%"},"readable":"100 %"},"%mem":{"raw":{"value":null,"type":"Percentage","unit":"%"},"readable":"-"},"rss":{"raw":{"value":null,"type":"Bytes","unit":"B"},"readable":"-"},"vmem":{"raw":{"value":null,"type":"Bytes","unit":"B"},"readable":"-"},"peak_rss":{"raw":{"value":null,"type":"Bytes","unit":"B"},"readable":"-"},"peak_vmem":{"raw":{"value":null,"type":"Bytes","unit":"B"},"readable":"-"},"rchar":{"raw":{"value":null,"type":"Bytes","unit":"B"},"readable":"-"},"wchar":{"raw":{"value":null,"type":"Bytes","unit":"B"},"readable":"-"},"syscr":{"raw":{"value":null,"type":"Number"},"readable":"-"},"syscw":{"raw":{"value":null,"type":"Number"},"readable":"-"},"read_bytes":{"raw":{"value":null,"type":"Bytes","unit":"B"},"readable":"-"},"write_bytes":{"raw":{"value":null,"type":"Bytes","unit":"B"},"readable":"-"},"attempt":{"raw":{"value":null,"type":"Number"},"readable":"-"},"workdir":{"raw":{"value":null,"type":"str"},"readable":"-"},"script":{"raw":{"value":null,"type":"str"},"readable":"-"},"scratch":{"raw":{"value":null,"type":"str"},"readable":"-"},"queue":{"raw":{"value":null,"type":"str"},"readable":"-"},"cpus":{"raw":{"value":1,"type":"Number","unit":"","scale":""},"readable":"1"},"memory":{"raw":{"value":7E+9,"type":"Bytes","unit":"B","scale":""},"readable":"7 GB"},"disk":{"raw":{"value":null,"type":"Bytes","unit":"B"},"readable":"-"},"time":{"raw":{"value":null,"type":"Duration","unit":"ms"},"readable":"-"},"env":{"raw":{"value":null,"type":"str"},"readable":"-"},"error_action":{"raw":{"value":null,"type":"str"},"readable":"-"},"vol_ctxt":{"raw":{"value":null,"type":"Number"},"readable":"-"},"inv_ctxt":{"raw":{"value":null,"type":"Number"},"readable":"-"},"hostname":{"raw":{"value":null,"type":"str"},"readable":"-"},"cpu_model":{"raw":{"value":"Unknown model","type":"str"},"readable":"Unknown model"},"accelerator":{"raw":{"value":null,"type":"Number"},"readable":"-"},"accelerator_type":{"raw":{"value":null,"type":"str"},"readable":"-"},"energy_consumption":{"raw":{"value":14.01750,"type":"Number","unit":"Wh","scale":""},"readable":"14.02 Wh"},"CO2e":{"raw":{"value":6.728400000,"type":"Number","unit":"g","scale":""},"readable":"6.73 g"},"CO2e_market":{"raw":{"value":null,"type":"Number","unit":"g"},"readable":"-"},"carbon_intensity":{"raw":{"value":480.0,"type":"Number","unit":"gCO\u2082e/kWh","scale":""},"readable":"480 gCO\u2082e/kWh"},"carbon_intensity_market":{"raw":{"value":null,"type":"Number","unit":"gCO\u2082e/kWh"},"readable":"-"},"pue":{"raw":{"value":1.0,"type":"Number","unit":"","scale":""},"readable":"1"},"powerdraw_cpu":{"raw":{"value":11.41,"type":"Number","unit":"W","scale":""},"readable":"11.41 W"},"powerdraw_memory":{"raw":{"value":0.3725,"type":"Number","unit":"W","scale":""},"readable":"372.5 mW"},"cpu_power_model":{"raw":{"value":null,"type":"str"},"readable":"-"},"raw_energy_processor":{"raw":{"value":11.41,"type":"Number","unit":"Wh","scale":""},"readable":"11.41 Wh"},"raw_energy_memory":{"raw":{"value":2.6075,"type":"Number","unit":"Wh","scale":""},"readable":"2.61 Wh"}}],"summary":{"observerTestProcess":{"CO2e":[6.728400000],"energy_consumption":[0.01401750],"CO2e_non_cached":[6.728400000],"energy_consumption_non_cached":[0.01401750]}}};
+    window.options = [{"option":"ci","value":"480.0"},{"option":"ciMarket","value":null},{"option":"customCpuTdpFile","value":null},{"option":"ignoreCpuModel","value":"false"},{"option":"location","value":null},{"option":"machineType","value":null},{"option":"powerdrawCpuDefault","value":null},{"option":"powerdrawMem","value":"0.3725"},{"option":"provenanceFile","value":"/tmp/tmpdir17388884972864674120/provenance_test.json"},{"option":"pue","value":"1.0"},{"option":"reportFile","value":"/tmp/tmpdir17388884972864674120/report_test.html"},{"option":"summaryFile","value":"/tmp/tmpdir17388884972864674120/summary_test.txt"},{"option":"traceFile","value":"/tmp/tmpdir17388884972864674120/trace_test.txt"}];
     window.ciRecords = {};
   </script>
 
@@ -1553,6 +1780,7 @@
         <li class="nav-item"><a class="nav-link" href="#metrics">Metrics</a></li>
         <li class="nav-item"><a class="nav-link" href="#tasks">Tasks</a></li>
         <li class="nav-item"><a class="nav-link" href="#options">Options</a></li>
+        <li class="nav-item"><a class="nav-link" href="#optimization">Optimization</a></li>
         <li class="nav-item"><a class="nav-link" href="#attribution-and-references">Attribution</a></li>
       </ul>
     </div>
@@ -1582,7 +1810,7 @@
       <dl>
         <dt>Run times</dt>
         <dd>
-          <span id="workflow_start">22-Jun-2026 13:52:47</span> - <span id="workflow_complete">22-Jun-2026 13:52:47</span>
+          <span id="workflow_start">02-Jul-2026 12:23:56</span> - <span id="workflow_complete">02-Jul-2026 12:23:56</span>
           (<span id="completed_fromnow"></span>duration: <strong>null</strong>)
         </dd>
 
@@ -1719,6 +1947,21 @@
       <div id="process-swimlane-plot"></div>
       <div id="ci-plot"></div>
       <p class="mt-3 mb-3">The upper panel shows each task's execution window grouped by process. The lower panel shows the carbon intensity (CI) and energy consumption over the same timeline. Both panels are linked — zoom or pan one to update the other.</p>
+    </div>
+
+    <!-- Optimization recommendations -->
+    <div class="container">
+      <h2 id="optimization" class="section">Optimization</h2>
+      <p>The recommendations below are suggestions and may not apply to every case.</p>
+
+      <h3 id="optimization-memory">Memory</h3>
+      <div id="memory-optimization-plot"></div>
+      <p class="mt-3 mb-3">The primary trace (<b>raw_energy_memory</b>) shows the actual memory-attributed energy consumption per task (in Wh). The alternative trace (<b>hypothetical energy</b>) shows what the energy would be if each task used the maximum RSS observed by any task in its process plus and additional 20% to account for variation.</p>
+
+      <details>
+        <summary>Config recommendation</summary>
+        <pre id="memory-optimization-config"></pre>
+      </details>
     </div>
 
     <!-- Tasks table -->
