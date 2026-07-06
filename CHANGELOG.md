@@ -4,6 +4,7 @@
 - Session memory value now accumulation of head job and workflow
 - Added names to workflow and other named levels in the provenance output
 - Plugin now supports empty runs with no tasks
+- Wrong RSS size call in head job
 
 ## Misc:
 - Made summary file disabled on default with option to enable

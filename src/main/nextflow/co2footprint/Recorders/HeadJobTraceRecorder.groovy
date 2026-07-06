@@ -177,7 +177,7 @@ class HeadJobTraceRecorder {
                     timestamp: System.currentTimeMillis(),
                     
                     // Memory - The RSS value gives the best approximation for allocated resources by the head job
-                    rssBytes: activeProcesses.sum({ OSProcess p -> p.residentMemory}) as Long,
+                    rssBytes: activeProcesses.sum({ OSProcess p -> p.residentSetSize}) as Long,
                     virtualMemoryBytes: activeProcesses.sum({ OSProcess p -> p.virtualSize}) as Long,
             )
 
