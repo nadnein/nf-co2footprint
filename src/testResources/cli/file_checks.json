@@ -8,9 +8,9 @@
     "num_lines": 30
   },
   "report_test.html": {
-    "checksum": "530fc7aabb9ca680f7abd8d3f30e4171",
-    "excluded_lines": [1777, 1815, 1831],
-    "num_lines": 2056
+    "checksum": "625e30f9223c3e65cf586740302a0260",
+    "excluded_lines": [1551, 1600],
+    "num_lines": 1831
   },
   "provenance_test.json": {
     "checksum": "06fd3e56b131c09a461fc60fbd407179",
@@ -21,5 +21,4 @@
     "excluded_lines": [38, 47, 56, 368, 377, 386, 653, 662, 671, 978, 987, 996, 1317, 1326, 1335, 1670, 1679, 1688, 2023, 2032, 2041, 2376, 2385, 2394],
     "num_lines": 2657
   }
-}
 }

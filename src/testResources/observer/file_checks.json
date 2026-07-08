@@ -4,9 +4,8 @@
     "num_lines": 30
   },
   "report_test.html": {
-    "checksum": "272e94ea91ff1cf8e959a11a30adc543",
-    "num_lines": 2059,
-    "excluded_lines": [1761, 1813]
+    "checksum": "218a7c02cce7af552219d818f768d7da",
+    "num_lines": 1834
   },
   "provenance_test.json": {
     "checksum": "ac4186c40cc0292ee5ddaa6935e63830",
