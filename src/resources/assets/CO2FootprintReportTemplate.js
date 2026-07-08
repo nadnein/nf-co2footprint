@@ -1067,12 +1067,12 @@ $(function () {
     
     const memory_plot_data = [
       {
-        name: "Currently accumulated",
+        name: "Allocated energy consumption",
         x: timeStepsList, y: accumulatedMemoryEnergyList,
         color: '#0D6A8A'
       },
       {
-        name: "Hypothetical",
+        name: "Hypothetical energy consumption",
         x: timeStepsList, y: accumulatedHypotheticalMemoryEnergyList,
         color: '#E76F51'
       }
@@ -1292,11 +1292,7 @@ $(function () {
       optimizationPromises.push( memoryOptimizationPlot )
       
       // Add summary of saved values
-      let memoryOptimizationSummary = document.createElement('p')
-      memoryOptimizationSummary.classList.add('mt-3', 'mb-3')
-      memoryOptimizationSummary.textContent = 'Applying the following config can save up to ' + savedEnergy + ' Wh of energy.'
-
-      document.getElementById('optimization-memory').append(memoryOptimizationSummary)
+      document.getElementById('memory-optimization-text').innerHTML += ' Applying the following config can save up to ' + Math.round(savedEnergy * 1000) / 1000 + ' Wh of energy:'
     }
     
     return optimizationPromises

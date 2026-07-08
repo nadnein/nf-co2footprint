@@ -98,9 +98,9 @@ class ReportFileCreator extends BaseFileCreator{
         Set<String> commentLineStarts = ['//', '/*', '*', '*/']
         StringBuilder stringBuilder = new StringBuilder()
         for(String line : script.lines()) {
-            if (line.isEmpty()) { continue }
-
             String lineContent = line.trim()
+            if (lineContent.isEmpty()) { continue }
+
             if (!commentLineStarts.any({ String commentLineStart -> lineContent.startsWith(commentLineStart) }) ) {
                 stringBuilder.append(line)
                 stringBuilder.append('\n')

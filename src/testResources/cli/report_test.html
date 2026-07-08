@@ -679,7 +679,6 @@
       for(const entry of list) {
         newList.push(entry[key].raw.value)
       }
-      
       return newList
     }
     function toString(value) {
@@ -710,24 +709,19 @@
         task.start.time = new Date(task.start.raw.value)
         task.complete.time = new Date(task.complete.raw.value)
       })
-      
       window.data.trace = window.data.trace.sort( (a, b) => a.start.time - b.start.time )
       window.data.workflowStart = window.data.trace[0].start.time
       window.data.workflowEnd = null
-      
       for (const task of window.data.trace) {
         const processKey = task.process.raw.value || 'unknown'
         if (!sortedTasksInProcesses.has(processKey)) {
           sortedTasksInProcesses.set(processKey, [])
         }
-        
         sortedTasksInProcesses.get(processKey).push(task)
-        
         if (window.data.workflowEnd == null || task.complete.time > window.data.workflowEnd) {
           window.data.workflowEnd = task.complete.time
         }
       }
-      
       return sortedTasksInProcesses
     }
     function collect_task_time_steps() {
@@ -755,7 +749,6 @@
       }
       const sortedTasksInProcesses = sortTasksAndProcesses()
       window.data.processDisplayNames = buildUniqueLabels(Array.from(sortedTasksInProcesses.keys()))
-      
       collect_task_time_steps()
       function plot_resource_usage() {
         const allProcessKeys = Object.keys(window.data.summary)
@@ -1021,7 +1014,6 @@
           }
           accumulated.push(current)
         })
-        
         return accumulated
       }
       function make_ci_plot() {
@@ -1166,7 +1158,6 @@
         if (!window.data.trace || window.data.trace.length === 0) {
           return null
         }
-        
         let swimlanePlotContainer = ensure_process_swimlane_container()
         if (!swimlanePlotContainer || sortedTasksInProcesses.size === 0) {
           return null
@@ -1308,11 +1299,8 @@
         if (!window.data.timedTaskEvents || window.data.timedTaskEvents.length === 0) {
           return null
         }
-        
         let powerdrawMem = findValue(window.data.trace[0].powerdraw_memory)
-        
         let savedEnergy = 0.0
-        
         let timeStepsList = []
         let customDataList = []
         let accumulatedMemoryEnergyList = []
@@ -1327,12 +1315,10 @@
             let runtimeH = ((findValue(taskEvent.task.complete) || 0) - (findValue(taskEvent.task.start) || 0)) / 3_600_000
             let hypotheticalMemoryEnergy = powerdrawMem * recommendedMemory * runtimeH
             let taskId = findValue(taskEvent.task.task_id)
-            
             timeStepsList.push(taskEvent.time)
             customDataList.push({task_id: taskId, process: processName})
             accumulatedMemoryEnergyList.push(currentMemoryEnergy)
             accumulatedHypotheticalMemoryEnergyList.push(currentHypotheticalMemoryEnergy)
-            
             if (taskEvent.eventType === 'start') {
               currentMemoryEnergy += findValue(taskEvent.task.raw_energy_memory)
               currentHypotheticalMemoryEnergy += hypotheticalMemoryEnergy
@@ -1341,31 +1327,26 @@
               currentMemoryEnergy -= findValue(taskEvent.task.raw_energy_memory)
               currentHypotheticalMemoryEnergy -= hypotheticalMemoryEnergy
             }
-            
             timeStepsList.push(taskEvent.time)
             customDataList.push({task_id: taskId, process: processName})
             accumulatedMemoryEnergyList.push(currentMemoryEnergy)
             accumulatedHypotheticalMemoryEnergyList.push(currentHypotheticalMemoryEnergy)
-            
             savedEnergy += currentMemoryEnergy-currentHypotheticalMemoryEnergy
           }
-          
         })
         if (timeStepsList.length === 0) return null
-        
         const memory_plot_data = [
           {
-            name: "Currently accumulated",
+            name: "Allocated energy consumption",
             x: timeStepsList, y: accumulatedMemoryEnergyList,
             color: '#0D6A8A'
           },
           {
-            name: "Hypothetical",
+            name: "Hypothetical energy consumption",
             x: timeStepsList, y: accumulatedHypotheticalMemoryEnergyList,
             color: '#E76F51'
           }
         ]
-        
         memory_plot_data.forEach( trace => {
           trace.type = 'scatter'
           trace.mode = 'lines'
@@ -1415,10 +1396,8 @@
         return Plotly.newPlot('memory-optimization-plot', memory_plot_data, layout, { responsive: true }), savedEnergy
       }
       let blockRelayout = false
-      
       function mirrorLayout(targetPlotDiv, eventData) {
         if (!blockRelayout && eventData) {
-          
           function doRelayout(update) {
             blockRelayout = true
             Plotly.relayout(targetPlotDiv, update)
@@ -1432,7 +1411,6 @@
             if (eventData['yaxis.autorange']) {
               doRelayout({ 'yaxis.autorange': true })
             }
-            
             let range0 = eventData['xaxis.range[0]'] || eventData['xaxis.range']?.at(0)
             let range1 = eventData['xaxis.range[1]'] || eventData['xaxis.range']?.at(1)
             if (range0 !== undefined && range1 !== undefined) {
@@ -1471,22 +1449,18 @@
         configElement.id = 'optimization-config'
         configElement.textContent = configLines.join('\n')
         detailsElement.append(summaryElement, configElement)
-        
         return [detailsElement]
       }
       function make_memory_optimization_block() {
         let memoryOptimizationDiv = document.createElement('h3')
         memoryOptimizationDiv.id = 'optimization-memory'
         memoryOptimizationDiv.textContent = 'Memory'
-        
         let memoryOptimizationPlot = document.createElement('div')
         memoryOptimizationPlot.id = 'memory-optimization-plot'
-        
         let memoryOptimizationText = document.createElement('p')
         memoryOptimizationText.classList.add('mt-3', 'mb-3')
         memoryOptimizationText.innerHTML = 'The primary trace (' + 'raw_energy_memory'.italics() + ') shows the actual memory-attributed energy consumption per task (in Wh).' +
             'The alternative trace (' + 'hypothetical energy'.italics() + ') shows what the energy would be if each task used the maximum RSS observed by any task in its process plus and additional 20% to account for variation.'
-      
         return [memoryOptimizationDiv, memoryOptimizationPlot, memoryOptimizationText]
       }
       function generateOptimizations() {
@@ -1495,18 +1469,14 @@
           optimizationElements.push(...make_memory_optimization_block())
         }
         if (optimizationElements.length > 0 || optimizationPromises.length > 0) {
-          
           let optimizationHeader = document.createElement('h2')
           optimizationHeader.id = 'optimization'
           optimizationHeader.className = 'section'
           optimizationHeader.textContent = 'Optimization'
-          
           let optimizationText = document.createElement('p')
           optimizationText.textContent = 'The recommendations below are suggestions and may not apply to every case'
-          
           optimizationElements.unshift(optimizationHeader, optimizationText)
           optimizationElements.push(...make_optimization_config())
-          
           let optimizationContainer = document.getElementById('optimization-container')
           optimizationElements.forEach( optimizationElement => {
             optimizationContainer.appendChild(optimizationElement)
@@ -1516,19 +1486,13 @@
         if (window.data.memoryRecommendations) {
           let memoryOptimizationPlot, savedEnergy = make_memory_optimization_plot()
           optimizationPromises.push( memoryOptimizationPlot )
-          
-          let memoryOptimizationSummary = document.createElement('p')
-          memoryOptimizationSummary.classList.add('mt-3', 'mb-3')
-          memoryOptimizationSummary.textContent = 'Applying the following config can save up to ' + savedEnergy + ' Wh of energy.'
-          document.getElementById('optimization-memory').append(memoryOptimizationSummary)
+          document.getElementById('memory-optimization-text').innerHTML += ' Applying the following config can save up to ' + Math.round(savedEnergy * 1000) / 1000 + ' Wh of energy:'
         }
-        
         return optimizationPromises
       }
       function generateRecommendations() {
         generateMemoryRecommendations()
       }
-      
       generateRecommendations()
       Promise.all([
         Promise.resolve(make_ci_plot()),
