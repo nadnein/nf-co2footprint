@@ -8,8 +8,8 @@
     "num_lines": 30
   },
   "report_test.html": {
-    "checksum": "e1e603feec149fdcea5cb6fb0d3c9e41",
-    "excluded_lines": [1515, 1561, 1566],
+    "checksum": "0cf7a50cbe12cbdd24aff6f5a0efe79d",
+    "excluded_lines": [1511, 1561, 1566],
     "num_lines": 1795
   },
   "provenance_test.json": {
