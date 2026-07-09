@@ -11,9 +11,11 @@ Regarding the carbon footprint it is almost always better to allocate enough res
 but if you have to repeat a run or apply a similar dataset, optimizing resource allocation can save some energy.
 
 #### Memory
-If possible, the [HTML report file](./output.md#output-report) provides a recommendation on how to adjust the allocated memory, based upon the allocated resident set size (RSS) peak of each process.
-It includes a 20% buffer to avoid running out of memory.
+If possible, the [HTML report file](./output.md#output-report) provides a recommendation on how to adjust the allocated memory of each process, based on its peak resident set size (RSS).
+A 20% buffer is included to avoid running out of memory, and the result is rounded up to the nearest GB:
 
 $$
-Mem_{process}^{recommended} = \lceil \max{(RSS_{process}) } \cdot 1.2 ) \rceil_{GB}
+\mathrm{Mem}_{proc}^{\mathrm{rec}} = \left\lceil 1.2 \cdot \max_{task}\, \mathrm{RSS}_{proc}(task) \right\rceil_\mathrm{GB}
 $$
+
+where $proc$ denotes the process and the maximum is taken over its runtime.
