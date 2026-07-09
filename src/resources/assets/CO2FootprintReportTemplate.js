@@ -986,15 +986,10 @@ $(function () {
     // Collect memory recommendations
     window.data.memoryRecommendations = new Map()
     for (const [processKey, tasks] of sortedTasksInProcesses.entries()) {
-
       // Prefer peak_rss (bytes -> GB), fallback to memory (GB)
       let peakRss = Math.max( ...selectEntryRawValue(tasks, 'peak_rss') )
-      let memory = Math.max( ...selectEntryRawValue(tasks, 'memory') )
-      let memInGB = (peakRss != null && peakRss > 0) ? peakRss / 1e9 :
-          (memory != null && memory > 0) ? memory / 1e9 : null
-
-      if (memInGB != null && memInGB > 0) {
-        window.data.memoryRecommendations.set(processKey, Math.ceil(memInGB * 1.2))
+      if (peakRss) {
+        window.data.memoryRecommendations.set(processKey, Math.ceil((peakRss / 1e9) * 1.2))
       }
     }
   }
@@ -1257,11 +1252,11 @@ $(function () {
     let optimizationElements = []
 
     // Memory optimization recommendations
-    if (window.data.memoryRecommendations) {
+    if (window.data.memoryRecommendations?.size > 0) {
       optimizationElements.push(...make_memory_optimization_block())
     }
 
-    if (optimizationElements.length > 0 || optimizationPromises.length > 0) {
+    if (optimizationElements.length > 0) {
       
       // <h2 id="optimization" className="section">Optimization</h2>
       let optimizationHeader = document.createElement('h2')
@@ -1287,7 +1282,7 @@ $(function () {
     let optimizationPromises = []
 
     // Memory optimization plots
-    if (window.data.memoryRecommendations) {
+    if (window.data.memoryRecommendations?.size > 0) {
       let memoryOptimizationPlot, savedEnergy = make_memory_optimization_plot()
       optimizationPromises.push( memoryOptimizationPlot )
       
