@@ -137,15 +137,9 @@ class LoggingAdapter {
     }
 
     /**
-     * Adds a DeduplicateMarkerFilter to filter out all Markers.unique markers.
-     * Does nothing if a DeduplicateMarkerFilter is already registered on the context,
-     * so it is safe to call this repeatedly (e.g. from multiple entry points).
+     * Adds a DeduplicateMarkerFilter to filter out all Markers.unique markers
      */
     void addUniqueMarkerFilter() {
-        boolean alreadyRegistered = loggerContext.getTurboFilterList().any { it instanceof DeduplicateMarkerFilter }
-        if (alreadyRegistered) {
-            return
-        }
         final TurboFilter deduplicateMarkerFilter = new DeduplicateMarkerFilter(
                 [Markers.unique, Markers.silentUnique]
         )   // Define DeduplicateMarkerFilter
