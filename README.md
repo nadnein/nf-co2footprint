@@ -45,6 +45,9 @@ The plugin also provides a CLI command for post-run carbon footprint calculation
 The plugin can generate four files, a [detailed report](assets/co2footprint_report_sample.html), a [text summary](assets/co2footprint_summary_sample.txt), a [trace file](assets/co2footprint_trace_sample.txt), and a [provenance file](assets/co2footprint_provenance_sample.json).  
 For more details, see the [output documentation](usage/output.md).
 
+## Optimization
+In addition to emission parameters, the plugin provides recommendations on how to optimize the carbon footprint of runs. For details see the [optimization guide](usage/optimization.md).
+
 ## Contributing
 Before contributing, please read the [contribution guidelines](contributing/guidelines.md) carefully. You may also find the recommended [testing setup](contributing/setup.md) helpful.
 

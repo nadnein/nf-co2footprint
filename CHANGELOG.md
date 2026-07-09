@@ -15,6 +15,7 @@
 ## Features:
 - Added more calculation metrics to provenance and trace file to enhance reproducibility
 - Added exclusive head job resource tracking
+- Added Optimization section with first memory optimization recommendation
 
 # 1.3.0
 ## Bug Fixes:
