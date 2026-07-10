@@ -10,6 +10,7 @@
 
 # 1.4.0
 ## Bug Fixes:
+- Fixed `realtime` column in HTML report showing the requested time limit instead of the actual wall-clock runtime
 - Session tracking now applicable to other than local settings
 - Session memory value now accumulation of head job and workflow
 - Added names to workflow and other named levels in the provenance output
