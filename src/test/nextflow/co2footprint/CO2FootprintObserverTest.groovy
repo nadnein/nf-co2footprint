@@ -153,7 +153,7 @@ class CO2FootprintObserverTest extends Specification{
 
         CO2EquivalencesRecord co2EquivalencesRecord = observer
             .getCO2FootprintCalculator()
-            .computeCO2footprintEquivalences(observer.workflowStats.co2Record.store.CO2e as Double)
+            .computeCO2footprintEquivalences(observer.workflowStats.co2Record.store.CO2e as BigDecimal)
 
         expect:
         // Values compared to result from www.green-algorithms.org (1h, 1core, TDP=11.45, CI:475)
@@ -225,15 +225,16 @@ class CO2FootprintObserverTest extends Specification{
         headers.size() == values.size()
 
         headers == [
-                'task_id', 'status', 'name', 'energy_consumption', 'CO2e', 'CO2e_market', 'carbon_intensity', '%cpu',
-                'memory', 'realtime', 'cpus', 'powerdraw_cpu', 'cpu_model', 'raw_energy_processor', 'raw_energy_memory',
+                'task_id', 'status', 'name', 'energy_consumption', 'CO2e', 'CO2e_market', 'raw_energy_processor', 'raw_energy_memory',
+                'carbon_intensity', '%cpu', 'memory', 'realtime', 'cpus', 'powerdraw_cpu', 'cpu_model',
         ]
+
         values == [
-            '111', 'COMPLETED', '-', '14.02 Wh', '6.73 g', '-', '480 gCO₂e/kWh', '100 %',
-            '7 GB', '1h', '1', '11.41 W', 'Unknown model', '11.41 Wh', '2.61 Wh',
+            '111', 'COMPLETED', '-', '14.02 Wh', '6.73 g', '-', '11.41 Wh', '2.61 Wh',
+            '480 gCO₂e/kWh', '100 %', '7 GB', '1h', '1', '11.41 W', 'Unknown model'
         ] // GA: CO₂e is 6.94g with CI of 475 gCO₂eq/kWh
 
-        fileChecker.compareChecksums(tracePath, '935b64980306aa449d4057d3d752fdf3')
+        fileChecker.compareChecksums(tracePath, 'c69577c73031114286fef83336b9ae78')
 
 
         // Check Summary File
@@ -251,7 +252,7 @@ class CO2FootprintObserverTest extends Specification{
         fileChecker.runChecks(
             reportPath,
             [
-                1534: '    window.options = [' +
+                 1509: '    window.options = [' +
                         '{"option":"ci","value":"480.0"},'+
                         '{"option":"ciMarket","value":null},' +
                         '{"option":"customCpuTdpFile","value":null},' +
@@ -265,7 +266,7 @@ class CO2FootprintObserverTest extends Specification{
                         "{\"option\":\"reportFile\",\"value\":\"${reportPath}\"}," +
                         "{\"option\":\"summaryFile\",\"value\":\"${summaryPath}\"}," +
                         "{\"option\":\"traceFile\",\"value\":\"${tracePath}\"}];",
-                1585: '          ' +
+                 1561: '          ' +
                         "<span id=\"workflow_start\">${time.format('dd-MMM-YYYY HH:mm:ss')}</span>" +
                         " - <span id=\"workflow_complete\">${time.format('dd-MMM-YYYY HH:mm:ss')}</span>"
             ]

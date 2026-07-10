@@ -70,7 +70,7 @@ class CO2FootprintObserver implements TraceObserverV2 {
 
         // Create a CO2RecordTree root node for the run, tagged with 'workflow' level,
         // to collect and organize execution metrics hierarchically.
-        this.workflowStats = new CO2RecordTree('Unknown workflow', [level: 'workflow'])
+        this.workflowStats = new CO2RecordTree('Unknown workflow', [workflowLevel: 'workflow'])
 
         // Make file instances
         this.traceFile = new TraceFileCreator(config.trace)
@@ -79,7 +79,7 @@ class CO2FootprintObserver implements TraceObserverV2 {
         this.provenanceFile = new ProvenanceFileCreator(config.provenance)
 
         if (!config.trace.enabled && !config.summary.enabled && !config.report.enabled && !config.provenance.enabled) {
-            log.warn('No output files are enabled - to enable, set `enabled: true` in the sections `trace`, `summary` or `report`.')
+            log.warn('No output files are enabled - to enable, set `enabled: true` in the sections `trace`, `summary`, `report` or `provenance`.')
         }
 
         this.co2FootprintCalculator = co2FootprintCalculator
@@ -110,22 +110,26 @@ class CO2FootprintObserver implements TraceObserverV2 {
     /**
      * Calculate the CO2 emissions in form of a {@link CO2Record} from a {@link TraceRecord}
      * in conjunction with the current CI Record collector.
+     *
+     * @param traceRecord the TraceRecord of the task for which the CO2Record should be created
+     * @param postRun whether the CO2Record is created post run or during runtime
      */
-    CO2Record createCO2Record(TraceRecord traceRecord) {
-        return co2FootprintCalculator.computeTaskCO2footprint(traceRecord, timeCiRecordCollector)
+    CO2Record createCO2Record(TraceRecord traceRecord, boolean postRun=false) {
+        return co2FootprintCalculator.computeTaskCO2footprint(traceRecord, timeCiRecordCollector, postRun)
     }
 
     /**
      * Aggregates the trace and CO₂ records of a finished task.
      *
      * @param trace TraceRecord of the finished task
+     * @param postRun whether the aggregation is happening post run or during runtime
      */
-    synchronized CO2Record aggregateRecords(TraceRecord traceRecord) {
+    synchronized CO2Record aggregateRecords(TraceRecord traceRecord, boolean postRun=false) {
         // Remove task from set of running tasks
         runningTasks.remove(traceRecord.taskId)
 
         // Compute CO₂ footprint for this task
-        final CO2Record co2Record = createCO2Record(traceRecord)
+        final CO2Record co2Record = createCO2Record(traceRecord, postRun)
 
         // Optionally write to trace file
         this.traceFile.write(co2Record)
@@ -133,11 +137,11 @@ class CO2FootprintObserver implements TraceObserverV2 {
         // Add a process node under the workflow if it doesn’t exist yet
         CO2RecordTree processNode = workflowStats.getChild(traceRecord.processName)
         if(!processNode) {
-            processNode = workflowStats.addChild(new CO2RecordTree(traceRecord.processName, [level: 'process']))
+            processNode = workflowStats.addChild(new CO2RecordTree(traceRecord.processName, [workflowLevel: 'process']))
         }
 
         // Add a task node with its CO2Record to the corresponding process
-        processNode.addChild(new CO2RecordTree(traceRecord.taskId, [level: 'task'], co2Record))
+        processNode.addChild(new CO2RecordTree(traceRecord.taskId, [workflowLevel: 'task'], co2Record))
 
         return co2Record
     }
@@ -187,7 +191,7 @@ class CO2FootprintObserver implements TraceObserverV2 {
         log.debug('Workflow started -- CO2Footprint file instantiated')
 
         CO2FootprintPlugin co2footprintPlugin = CO2FootprintPlugin.getPlugin()
-        co2footprintPlugin?.sessionTraceRecorder?.attachSession(session)
+        co2footprintPlugin?.headJobTraceRecorder?.attachSession(session)
 
         // Construct session and aggregator
         this.session = session
@@ -195,8 +199,8 @@ class CO2FootprintObserver implements TraceObserverV2 {
         this.workflowStats.name = session.runName
 
         // we wouldn't expect a config where all output files are turned off, so warn the user
-        if (!traceFile && !summaryFile && !reportFile) {
-            log.warn('No output files are enabled - to enable, set `enabled: true` in the sections `trace`, `summary` or `report`.')
+        if (!traceFile && !summaryFile && !reportFile && !provenanceFile) {
+            log.warn('No output files are enabled - to enable, set `enabled: true` in the sections `trace`, `summary`, `report` or `provenance`.')
         }
 
         // Start hourly CI updating

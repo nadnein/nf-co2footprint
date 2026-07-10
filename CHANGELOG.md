@@ -1,9 +1,32 @@
 # New
+## Features:
+- 
+
 ## Bug Fixes:
+-
 
 ## Misc:
+- 
+
+# 1.4.0
+## Bug Fixes:
+- Fixed `realtime` column in HTML report showing the requested time limit instead of the actual wall-clock runtime
+- Session tracking now applicable to other than local settings
+- Session memory value now accumulation of head job and workflow
+- Added names to workflow and other named levels in the provenance output
+- Plugin now supports empty runs with no tasks
+- Wrong RSS size call in head job
+
+## Misc:
+- Made summary file disabled on default with option to enable
+- Updated dependencies and removed unnecessary ones
+- Added Nextflow versioning information of the plugin to docs
+- Removed unnecessary dependencies from MkDocs documentation
 
 ## Features:
+- Added more calculation metrics to provenance and trace file to enhance reproducibility
+- Added exclusive head job resource tracking
+- Added Optimization section with first memory optimization recommendation
 
 # 1.3.0
 ## Bug Fixes:
@@ -18,9 +41,11 @@
 - Added full integration test
 - Adapted to Nextflow 26
 - Reworked `Bytes`, such that it can take binary and decimal-based values
+- Updated Nextflow's plugin helper plugin
 
 ## Features:
 - Transformation of data file to provenance file with schema.org / bioschemas.org type annotation in JSON-LD data format
+- Added post-run functionality with provenance file
 
 # 1.2.1
 ## Bug Fixes:
