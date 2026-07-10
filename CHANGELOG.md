@@ -1,4 +1,14 @@
 # New
+## Features:
+- 
+
+## Bug Fixes:
+-
+
+## Misc:
+- 
+
+# 1.4.0
 ## Bug Fixes:
 - Fixed `realtime` column in HTML report showing the requested time limit instead of the actual wall-clock runtime
 - Session tracking now applicable to other than local settings
